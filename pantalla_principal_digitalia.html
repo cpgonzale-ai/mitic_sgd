@@ -131,7 +131,7 @@
 
                                 {/* Opción 2: Gestión Documental */}
                                 <PortalCard 
-                                    title="Gestión Documental (GDL)"
+                                    title="Gestión Documental"
                                     description="Repositorio centralizado, generación de documentos oficiales, validación de autenticidad e integración interinstitucional."
                                     color="emerald"
                                     icon={
@@ -382,7 +382,7 @@
                             </button>
 
                             {currentView === 'list' && (<div className="h-full overflow-y-auto"><Exp_FileListView onSelectFile={handleSelectFile} icons={IconsLib} /></div>)}
-                            {currentView === 'detail' && (<div className="h-full overflow-y-auto"><button onClick={handleBack} className="m-4 mb-0 text-sm text-blue-600 hover:underline flex items-center gap-1"><IconsLib.ArrowLeft size={16}/> Volver a la lista</button><Exp_DetailView file={selectedFile} onAction={handleStartWizard} icons={IconsLib} /></div>)}
+                            {currentView === 'detail' && (<div className="h-full overflow-y-auto"><button onClick={handleBack} className="m-4 mb-0 text-sm text-blue-600 hover:underline flex items-center gap-1"><Exp_IconsLib.ArrowLeft size={16}/> Volver a la lista</button><Exp_DetailView file={selectedFile} onAction={handleStartWizard} icons={IconsLib} /></div>)}
                             {currentView === 'wizard' && (<Exp_WizardView file={selectedFile} onBack={handleBack} icons={IconsLib} />)}
                         </main>
                     </div>
