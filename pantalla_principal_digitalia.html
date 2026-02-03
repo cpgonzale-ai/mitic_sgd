@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digitalia - Portal Unificado de Gobierno</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Lucide Icons (Requerido para el módulo de Expediente) -->
+    <script src="https://unpkg.com/lucide@0.263.1"></script>
+
+    <!-- Fuentes Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
+        .animate-slide-up { animation: slideUp 0.5s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Glassmorphism para el portal */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // ==========================================
+        // COMPONENTES DEL PORTAL (PANTALLA PRINCIPAL)
+        // ==========================================
+
+        const PortalCard = ({ title, description, icon, color, onClick, badge }) => (
+            <div 
+                onClick={onClick}
+                className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100 cursor-pointer card-hover group relative overflow-hidden"
+            >
+                <div className={`absolute top-0 right-0 w-32 h-32 bg-${color}-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110`}></div>
+                
+                <div className="relative z-10">
+                    <div className={`w-14 h-14 rounded-xl bg-${color}-100 text-${color}-600 flex items-center justify-center mb-6 shadow-sm group-hover:bg-${color}-600 group-hover:text-white transition-colors`}>
+                        {icon}
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-900 transition-colors">{title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed mb-4">{description}</p>
+                    
+                    <div className="flex items-center text-sm font-semibold text-blue-600 group-hover:translate-x-2 transition-transform">
+                        Acceder al módulo <span className="ml-2">→</span>
+                    </div>
+                </div>
+                {badge && (
+                    <div className="absolute top-4 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-pulse">
+                        {badge}
+                    </div>
+                )}
+            </div>
+        );
+
+        const PortalScreen = ({ onNavigate }) => {
+            return (
+                <div className="min-h-screen bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80')] bg-cover bg-center relative font-sans">
+                    {/* Overlay gradiente */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 via-slate-900/90 to-slate-900/95 backdrop-blur-sm"></div>
+
+                    <div className="relative z-10 h-full flex flex-col">
+                        {/* Header Portal */}
+                        <header className="px-8 py-6 flex justify-between items-center border-b border-white/10">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">D</div>
+                                <div>
+                                    <h1 className="text-white font-bold text-xl tracking-tight">DIGITALIA</h1>
+                                    <p className="text-blue-200 text-xs tracking-wider uppercase">Plataforma de Gobierno Digital</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right hidden sm:block">
+                                    <p className="text-white text-sm font-medium">Magali Amarilla</p>
+                                    <p className="text-slate-400 text-xs">MITIC - Unidad Especializada TIC</p>
+                                </div>
+                                <div className="w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center text-white overflow-hidden">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Contenido Principal */}
+                        <main className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 animate-slide-up">
+                            <div className="text-center mb-12 max-w-2xl mx-auto">
+                                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Bienvenido al Ecosistema Digital</h2>
+                                <p className="text-slate-300 text-lg">Seleccione el módulo de gestión con el que desea operar hoy.</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+                                {/* Opción 1: Expediente */}
+                                <PortalCard 
+                                    title="Gestión de Expediente"
+                                    description="Tramitación electrónica, gestión de actuaciones, firmas digitales y seguimiento de expedientes administrativos."
+                                    color="blue"
+                                    badge="3 Pendientes"
+                                    icon={
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                                    }
+                                    onClick={() => window.location.href = 'https://cpgonzale-ai.github.io/mitic_sgd/gestion_expediente.html'}
+                                />
+
+                                {/* Opción 2: Gestión Documental */}
+                                <PortalCard 
+                                    title="Gestión Documental (GDL)"
+                                    description="Repositorio centralizado, generación de documentos oficiales, validación de autenticidad e integración interinstitucional."
+                                    color="emerald"
+                                    icon={
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+                                    }
+                                    onClick={() => window.location.href = 'https://cpgonzale-ai.github.io/mitic_sgd/gestion_documental.html'}
+                                />
+                            </div>
+                        </main>
+
+                        <footer className="text-center py-6 text-slate-500 text-xs border-t border-white/5 bg-slate-900/50 backdrop-blur-md">
+                            &copy; 2026 Gobierno Nacional del Paraguay. Todos los derechos reservados. Sistema Digitalia v2.5
+                        </footer>
+                    </div>
+                </div>
+            );
+        };
+
+
+        // ==========================================
+        // SISTEMA 1: EXPEDIENTE ELECTRÓNICO (Código provisto 1)
+        // ==========================================
+
+        const ExpedienteSystem = ({ onExit }) => {
+            // --- INICIO CÓDIGO EXPEDIENTE ---
+             const Icon = ({ iconNode, size = 24, className = "", ...props }) => {
+                if (!iconNode || !Array.isArray(iconNode)) return null;
+                const [tag, attrs, children = []] = iconNode;
+                return React.createElement(tag, { ...attrs, width: size, height: size, className: className, ...props, strokeWidth: attrs['stroke-width'], strokeLinecap: attrs['stroke-linecap'], strokeLinejoin: attrs['stroke-linejoin'] }, Array.isArray(children) ? children.map(([childTag, childAttrs], index) => React.createElement(childTag, { ...childAttrs, key: index })) : null);
+            };
+
+            const usedIcons = ['Menu', 'Search', 'Bell', 'Settings', 'User', 'Home', 'FileText', 'Inbox', 'Send', 'Archive', 'Clock', 'ChevronRight', 'ChevronDown', 'Filter', 'Download', 'Eye', 'Edit3', 'Paperclip', 'CheckCircle', 'X', 'UploadCloud', 'File', 'AlertCircle', 'FolderOpen', 'Mail', 'HelpCircle', 'ChevronLeft', 'Plus', 'Link', 'MoreVertical', 'ShieldCheck', 'LayoutDashboard', 'FileInput', 'Files', 'Users', 'BarChart', 'Database', 'Save', 'Sparkles', 'MessageSquare', 'Loader2', 'Upload', 'ArrowLeft', 'ArrowRight', 'Printer', 'RefreshCw'];
+            const IconsLib = {};
+            usedIcons.forEach(name => {
+                if (window.lucide && window.lucide.icons && window.lucide.icons[name]) { IconsLib[name] = (props) => <Icon iconNode={window.lucide.icons[name]} {...props} />; } else { IconsLib[name] = () => null; }
+            });
+
+            const { Menu, Search, Bell, Settings, User, Home, FileText, Inbox, Send, Archive, Clock, ChevronRight, ChevronDown, Filter, Download, Eye, Edit3, Paperclip, CheckCircle, X, UploadCloud, File, AlertCircle, FolderOpen, Mail, HelpCircle, ChevronLeft, Plus, Link: _Link, MoreVertical, ShieldCheck, LayoutDashboard, FileInput, Files, Users, BarChart, Database, Save, Sparkles, MessageSquare, Loader2, Upload, ArrowLeft, ArrowRight, Printer, RefreshCw } = IconsLib;
+
+            const MOCK_FILES = [
+                { id: '2025-12021001-000288', nroOid: '2.16.858.2.1222.66570.202512021001000288', type: 'INFORMES / PUBLICO', subType: 'EXPEDIENTE DE VENCIMIENTO', title: 'EXPEDIENTE DE PRUEBA', priority: 'BAJA', date: '23/05/2025', dateTime: '22/05/2025 12:17:26', origin: 'DIRECCION DE LA UNIDAD ESPECIALIZADA TIC', official: 'MAGALI AMARILLA BRASSEL / mbrassel', recurrente: 'MAGALI AMARILLA BRASSEL / mbrassel', solicitante: 'JUAN PEREZ / jperez', fisico: 'No' },
+                { id: '2025-12021001-000275', type: 'INFORMES / PUBLICO', subType: 'PRUEBA DE EXPEDIENTE CON VENCIMIENTO', title: 'PRUEBA DE EXPEDIENTE CON VENCIMIENTO', priority: 'BAJA', date: '16/05/2025', origin: 'DIRECCION DE LA UNIDAD ESPECIALIZADA TIC', official: 'MAGALI AMARILLA BRASSEL / mbrassel', recurrente: '...', solicitante: '...', fisico: 'No' },
+                { id: '2024-12021001-000199', type: 'SOLICITUD DE PAGO / PUBLICO', subType: 'PRUEBA DE EXPEDIENTE', title: 'PRUEBA DE EXPEDIENTE', priority: 'BAJA', date: '07/05/2025', origin: 'DIRECCION DE LA UNIDAD ESPECIALIZADA TIC', official: 'MAGALI AMARILLA BRASSEL / mbrassel', recurrente: '...', solicitante: '...', fisico: 'No' }
+            ];
+            const GDL_SOURCE_DOCUMENTS = [{ id: 'DOC-2026-001', title: 'Resolución Ministerial 45/2026', type: 'Resolución', author: 'Rodrigo Antola', date: '02/02/2026', status: 'Firmado', size: '2.4 MB' }, { id: 'DOC-2026-002', title: 'Informe Técnico Auditoría Interna', type: 'Informe Técnico', author: 'Cynthia Gonzalez', date: '01/02/2026', status: 'Borrador', size: '4.1 MB' }, { id: 'DOC-2026-003', title: 'Dictamen Financiero Proyecto GDL', type: 'Dictamen', author: 'Fernando Mancia', date: '28/01/2026', status: 'Firmado', size: '1.2 MB' }, { id: 'DOC-2026-004', title: 'Nota de Remisión Nro 500', type: 'Nota', author: 'Mesa de Entrada', date: '25/01/2026', status: 'Recibido', size: '0.5 MB' }];
+
+            // Componentes Expediente (Definidos fuera para evitar re-montajes)
+            const Exp_SidebarItem = ({ icon: Icon, label, active, badge }) => (
+                <div className={`flex items-center justify-between px-6 py-3 cursor-pointer ${active ? 'bg-blue-50 text-blue-600 border-r-4 border-blue-600' : 'text-gray-600 hover:bg-gray-50'}`}>
+                    <div className="flex items-center gap-3"><Icon size={18} /><span>{label}</span></div>
+                    {badge && <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{badge}</span>}
+                </div>
+            );
+
+            const Exp_Sidebar = ({ icons }) => (
+                <div className="w-64 bg-white border-r border-gray-200 h-screen hidden lg:flex flex-col flex-shrink-0 text-sm">
+                    <div className="h-16 flex items-center px-6 border-b border-gray-100">
+                        <div className="flex items-center gap-2 text-blue-600 font-bold text-xl">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">D</div>
+                            DIGITALIA
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto py-4">
+                        <div className="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase">Menú Principal</div>
+                        <Exp_SidebarItem icon={icons.Home} label="Tablero Principal" />
+                        <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase">Gestión</div>
+                        <Exp_SidebarItem icon={icons.Inbox} label="Bandeja de Entrada" />
+                        <Exp_SidebarItem icon={icons.FileText} label="Bandeja de Tareas" active />
+                        <Exp_SidebarItem icon={icons.Eye} label="Para Conocimiento" badge="4" />
+                        <Exp_SidebarItem icon={icons.Send} label="Bandeja de Pase a Firmar" />
+                        <Exp_SidebarItem icon={icons.Archive} label="Bandeja de Expedientes Archivados" />
+                        <div className="mt-6 px-4 mb-2 text-xs font-semibold text-gray-400 uppercase">Acciones</div>
+                        <Exp_SidebarItem icon={icons.Edit3} label="Iniciar Expediente" />
+                        <Exp_SidebarItem icon={icons.User} label="Administración" />
+                    </div>
+                </div>
+            );
+
+            const Exp_Header = ({ icons }) => (
+                <div className="h-16 bg-blue-900 text-white flex items-center justify-between px-6 shadow-md shrink-0">
+                    <div className="flex items-center gap-4"><icons.Menu className="lg:hidden cursor-pointer" /><span className="font-medium text-sm text-blue-100">Sistema de Gestión de Expediente Electrónico</span></div>
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:flex items-center bg-blue-800 rounded px-3 py-1.5 border border-blue-700"><icons.Search size={16} className="text-blue-300 mr-2" /><input type="text" placeholder="Búsqueda Avanzada" className="bg-transparent border-none outline-none text-sm text-white placeholder-blue-300 w-48" /></div>
+                        <icons.Bell size={20} className="text-blue-200 cursor-pointer hover:text-white" /><icons.Settings size={20} className="text-blue-200 cursor-pointer hover:text-white" />
+                        <div className="flex items-center gap-2 pl-4 border-l border-blue-700">
+                            <div className="text-right hidden sm:block"><div className="text-xs font-bold">MAGALI AMARILLA</div><div className="text-xs text-blue-300">MITIC</div></div>
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center border-2 border-blue-300"><icons.User size={16} /></div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const Exp_StepIndicator = ({ currentStep, icons }) => {
+                const steps = [{ id: 1, label: 'Información del Expediente' }, { id: 2, label: 'Actuación' }, { id: 3, label: 'Adjuntar Documentos' }, { id: 4, label: 'Firmar y Derivar' }];
+                return (
+                    <div className="bg-white border-b border-gray-200 px-6 py-4 mb-6">
+                        <div className="flex items-center justify-between max-w-5xl mx-auto">
+                            {steps.map((step, index) => {
+                                const isActive = currentStep === step.id;
+                                const isCompleted = currentStep > step.id;
+                                return (
+                                    <div key={step.id} className="flex items-center flex-1 last:flex-none">
+                                        <div className="flex items-center relative">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold z-10 ${isActive ? 'bg-blue-600 text-white shadow-lg ring-4 ring-blue-50' : isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                                                {isCompleted ? <icons.CheckCircle size={16} /> : step.id}
+                                            </div>
+                                            <span className={`ml-3 text-sm font-medium hidden md:block ${isActive ? 'text-blue-700' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>{step.label}</span>
+                                        </div>
+                                        {index < steps.length - 1 && (<div className={`flex-1 h-0.5 mx-4 hidden sm:block ${isCompleted ? 'bg-green-500' : 'bg-gray-200'}`} />)}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
+
+            const Exp_FileListView = ({ onSelectFile, icons }) => (
+                <div className="p-6">
+                    <div className="flex items-center justify-between mb-6"><div><h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2"><span className="text-blue-600 text-lg">●</span> Bandeja de Expedientes</h1><p className="text-sm text-gray-500 mt-1">Gestione sus tareas pendientes y expedientes asignados.</p></div></div>
+                    <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 mb-6">
+                        <div className="flex gap-4 mb-4 border-b border-gray-100 pb-2"><button className="px-4 py-2 bg-blue-50 text-blue-700 font-semibold rounded-md text-sm border border-blue-200">Bandeja de Tareas</button><button className="px-4 py-2 text-gray-500 hover:text-gray-700 font-medium text-sm">Bandeja de Salida</button></div>
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                            <div className="md:col-span-4"><label className="block text-xs font-semibold text-gray-600 mb-1">Institución *</label><select className="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-50 text-gray-700"><option>MITIC - MINISTERIO DE TECNOLOGIAS DE LA INFORMACION...</option></select></div>
+                            <div className="md:col-span-2"><label className="block text-xs font-semibold text-gray-600 mb-1">Fecha de Actuación *</label><input type="date" className="w-full border border-gray-300 rounded px-2 py-2 text-sm text-gray-400" placeholder="Fecha Desde"/></div>
+                            <div className="md:col-span-2 flex items-center pt-5"><input type="date" className="w-full border border-gray-300 rounded px-2 py-2 text-sm text-gray-400" placeholder="Fecha Hasta"/></div>
+                            <div className="md:col-span-4 flex justify-end gap-2 pt-4 md:pt-0"><button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200"><icons.Search size={16} /> Buscar</button><button className="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded text-sm hover:bg-blue-800 shadow-sm"><icons.Filter size={16} /> Limpiar</button><button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-600 rounded text-sm hover:bg-gray-50"><icons.FileText size={16} /> Exportar a PDF</button></div>
+                        </div>
+                        <div className="flex gap-4 mt-4"><label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer"><div className="w-4 h-4 border border-gray-300 rounded bg-white"></div>Libres</label><label className="flex items-center gap-2 text-sm text-gray-800 font-medium cursor-pointer"><div className="w-4 h-4 border border-blue-500 rounded bg-blue-500 flex items-center justify-center"><icons.CheckCircle size={10} className="text-white" /></div>Mis Asignaciones</label></div>
+                    </div>
+                    <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"><h3 className="font-bold text-gray-700">Listado de Expedientes - Mis Asignaciones</h3></div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase border-b border-gray-200 whitespace-nowrap"><th className="p-4 font-semibold w-10"><input type="checkbox" /></th><th className="p-4 font-semibold">Nro. Expediente</th><th className="p-4 font-semibold">Tipo Expediente</th><th className="p-4 font-semibold">Título</th><th className="p-4 font-semibold text-center">Prioridad</th><th className="p-4 font-semibold">Fecha Actuación</th><th className="p-4 font-semibold">Dependencia Origen</th><th className="p-4 font-semibold">Funcionario/Usuario Origen</th><th className="p-4 font-semibold">Persona Recurrente</th><th className="p-4 font-semibold">Más Detalles</th></tr>
+                                </thead>
+                                <tbody className="text-sm">
+                                    {MOCK_FILES.map((file, idx) => (
+                                        <tr key={file.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors">
+                                            <td className="p-4"><input type="checkbox" /></td>
+                                            <td className="p-4 font-medium text-gray-900 whitespace-nowrap">{file.id}<div className="text-xs text-gray-400 mt-1">{file.id.split('-')[0]}</div></td>
+                                            <td className="p-4 text-gray-600"><div className="font-medium">{file.type}</div><div className="text-xs text-gray-400 mt-1 max-w-[150px] truncate" title={file.subType}>{file.subType}</div></td>
+                                            <td className="p-4 text-gray-800 font-medium max-w-xs truncate" title={file.title}>{file.title}</td>
+                                            <td className="p-4 text-center"><span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-bold border border-green-200">{file.priority}</span></td>
+                                            <td className="p-4 text-gray-600 whitespace-nowrap">{file.date}</td><td className="p-4 text-gray-500 text-xs max-w-[200px]">{file.origin}</td><td className="p-4 text-gray-500 text-xs max-w-[150px]">{file.official}</td><td className="p-4 text-gray-500 text-xs max-w-[150px]">{file.recurrente}</td>
+                                            <td className="p-4"><button onClick={() => onSelectFile(file)} className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium shadow-sm whitespace-nowrap">Ver</button></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const Exp_DetailView = ({ file, onAction, icons }) => (
+                <div className="p-6">
+                    <div className="flex items-center gap-2 text-sm text-gray-500 mb-4"><icons.Home size={14} /><icons.ChevronRight size={14} /><span>Expedientes</span><icons.ChevronRight size={14} /><span className="text-gray-700 font-medium">{file.id}</span></div>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6"><div className="p-4 border-b border-gray-100 flex justify-between items-center cursor-pointer bg-gray-50"><h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">i</span> DATOS CABECERA</h2><icons.ChevronDown size={20} className="text-gray-400" /></div></div>
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center cursor-pointer bg-gray-50"><h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">i</span> MÁS DETALLES</h2><icons.ChevronDown size={20} className="text-gray-400" /></div>
+                        <div className="p-6"><div className="flex flex-wrap gap-2 justify-start"><button className="px-4 py-2 bg-blue-900 text-white rounded shadow-sm text-sm font-medium hover:bg-blue-800">Incorporar Actuación</button><button onClick={onAction} className="px-4 py-2 bg-yellow-500 text-white rounded shadow-sm text-sm font-medium hover:bg-yellow-600">Realizar Actuación</button><button className="px-4 py-2 bg-gray-500 text-white rounded shadow-sm text-sm font-medium hover:bg-gray-600">Archivar</button><button className="px-4 py-2 bg-gray-100 border border-gray-300 text-gray-700 rounded shadow-sm text-sm font-medium hover:bg-gray-200">Acordonar</button><button className="px-4 py-2 bg-purple-600 text-white rounded shadow-sm text-sm font-medium hover:bg-purple-700">Ver Expediente</button><button className="px-4 py-2 bg-teal-600 text-white rounded shadow-sm text-sm font-medium hover:bg-teal-700">Ver Árbol de Contenido</button></div></div>
+                    </div>
+                    <div className="border-t border-gray-200 pt-4 text-xs text-gray-500">
+                        <div className="grid grid-cols-12 font-bold bg-gray-100 p-2 rounded-t text-gray-700"><div className="col-span-2">Responsable</div><div className="col-span-2">Dependencia Origen</div><div className="col-span-2">Dependencia Destino</div><div className="col-span-1">Tramo</div><div className="col-span-5">Contenido de la Actuación</div></div>
+                        <div className="grid grid-cols-12 p-2 border-b border-gray-100 bg-white"><div className="col-span-2 truncate">{file.official}</div><div className="col-span-2 truncate">{file.origin}</div><div className="col-span-2 truncate">{file.origin}</div><div className="col-span-1 text-center"><span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span></div><div className="col-span-5 truncate text-gray-400">23/05/2025 10:37</div></div>
+                    </div>
+                </div>
+            );
+
+            const Exp_WizardView = ({ file, onBack, icons }) => {
+                const [step, setStep] = useState(1);
+                const [loading, setLoading] = useState(false);
+                const [immediateResponse, setImmediateResponse] = useState('NO');
+                const [actionType, setActionType] = useState('');
+                const [deadline, setDeadline] = useState('29/05/2025');
+                const [actionDetail, setActionDetail] = useState('');
+                const [showGDLModal, setShowGDLModal] = useState(false);
+                const [searchTerm, setSearchTerm] = useState('');
+                const [uploadedFiles, setUploadedFiles] = useState([]);
+
+                const handleNext = () => { setLoading(true); setTimeout(() => { setStep(prev => prev + 1); setLoading(false); }, 600); };
+                const handleBack = () => { if (step > 1) setStep(prev => prev - 1); else onBack(); };
+                const handleLinkDocument = (doc) => { if (!uploadedFiles.find(f => f.id === doc.id)) { setUploadedFiles([...uploadedFiles, { id: doc.id, tipo: doc.type, nombre: doc.title, tamano: doc.size, fecha: doc.date }]); } setShowGDLModal(false); setSearchTerm(''); };
+                const removeFile = (id) => { setUploadedFiles(uploadedFiles.filter(f => f.id !== id)); };
+
+                return (
+                    <div className="flex flex-col h-full bg-gray-50 relative">
+                        <div className="bg-white px-6 py-3 shadow-sm flex items-center gap-2 text-sm text-gray-500 border-b border-gray-200"><icons.Home size={14} /><icons.ChevronRight size={14} /><span>Expedientes</span><icons.ChevronRight size={14} /><span>Bandeja de Expedientes</span><icons.ChevronRight size={14} /><span className="text-blue-600 font-medium">Realizar Actuación</span></div>
+                        <Exp_StepIndicator currentStep={step} icons={icons} />
+                        <div className="flex-1 overflow-y-auto px-6 pb-20"><div className="max-w-5xl mx-auto">
+                            {loading ? (<div className="flex flex-col items-center justify-center h-64 text-blue-600"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div><span className="text-sm font-medium animate-pulse">Procesando...</span></div>) : (
+                                <>
+                                    {step === 1 && (<div className="animate-fade-in"><div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"><h2 className="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-100 flex items-center gap-2"><div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">1</div> DATOS DEL EXPEDIENTE</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"><div className="group"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nro. de Expediente</label><div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800 font-medium text-sm">{file.id}</div></div><div className="group"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Título de Expediente</label><div className="p-2 bg-gray-50 rounded border border-gray-200 text-gray-800 font-bold text-sm">{file.title}</div></div></div></div></div>)}
+                                    {step === 2 && (<div className="animate-fade-in"><div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r text-sm text-orange-800 flex items-start gap-3"><icons.AlertCircle size={18} className="mt-0.5" /><div><p className="font-bold">Importante</p><p>Los campos marcados con (*) son obligatorios para continuar.</p></div></div><div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8"><h3 className="font-bold text-gray-700 uppercase mb-6">Actuación</h3><div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div><label className="block text-sm font-semibold text-gray-700 mb-2">Respuesta Inmediata *</label><select className="w-full border border-gray-300 rounded-md px-3 py-2.5" value={immediateResponse} onChange={(e) => setImmediateResponse(e.target.value)}><option value="NO">NO</option><option value="SI">SI</option></select></div><div className="md:col-span-2"><label className="block text-sm font-semibold text-gray-700 mb-2">Tipo de Actuación *</label><select className="w-full border border-gray-300 rounded-md px-3 py-2.5" value={actionType} onChange={(e) => setActionType(e.target.value)}><option value="">Seleccionar un tipo de Actuación</option><option value="notificar">Notificar</option><option value="elaborar_nota">Elaborar Nota</option><option value="dictamen">Emitir Dictamen</option></select></div></div><div className="mb-6"><label className="block text-sm font-semibold text-gray-700 mb-2">Actuación *</label><textarea className="w-full border border-gray-300 rounded-md px-4 py-3 min-h-[150px]" placeholder="DESCRIBIR DETALLE DE LA ACTUACIÓN" value={actionDetail} onChange={(e) => setActionDetail(e.target.value)} /></div></div></div>)}
+                                    {step === 3 && (<div className="animate-fade-in"><div className="bg-white rounded shadow border border-slate-200 mb-6"><div className="px-5 py-3 border-b border-slate-100 flex justify-between items-center"><h2 className="text-sm font-bold text-slate-700 uppercase">Documentos Adjuntos</h2>{uploadedFiles.length > 0 && <span className="text-xs text-green-600 bg-green-50 px-3 py-1 rounded">Operación exitosa</span>}</div><div className="p-6 space-y-6"><button onClick={() => setShowGDLModal(true)} className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded shadow-sm text-sm font-medium flex items-center transition-colors border border-teal-700"><icons.FolderOpen size={16} className="mr-2" /> Vincular con Gestión documental</button></div></div><div className="bg-white rounded shadow border border-slate-200 min-h-[250px] flex flex-col mb-6"><div className="px-5 py-4 border-b border-slate-100"><h3 className="text-sm font-bold text-slate-700 uppercase">ARCHIVOS CARGADOS</h3></div><div className="overflow-x-auto flex-1"><table className="w-full text-left"><thead className="bg-white border-b border-slate-200"><tr><th className="px-6 py-3 text-xs font-bold text-slate-600 border-r">Tipo</th><th className="px-6 py-3 text-xs font-bold text-slate-600">Nombre</th><th className="px-6 py-3 text-xs font-bold text-slate-600">Acción</th></tr></thead><tbody className="divide-y divide-slate-100">{uploadedFiles.length === 0 ? (<tr><td colSpan="3" className="px-6 py-12 text-slate-500 text-sm italic text-center">No se encuentran archivos cargados.</td></tr>) : (uploadedFiles.map((file) => (<tr key={file.id}><td className="px-6 py-3 text-xs text-slate-600">{file.tipo}</td><td className="px-6 py-3 text-xs text-blue-600 font-medium underline cursor-pointer">{file.nombre}</td><td className="px-6 py-3 text-center"><button onClick={() => removeFile(file.id)} className="text-red-500 p-1"><icons.X size={16} /></button></td></tr>)))}</tbody></table></div></div></div>)}
+                                    {step === 4 && (<div className="animate-fade-in"><div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6"><h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2">DOCUMENTOS A FIRMAR</h3><div className="p-4 bg-gray-50 rounded border border-gray-200 text-center"><p className="text-gray-600">Actuación lista para firma y derivación.</p></div></div></div>)}
+                                </>
+                            )}
+                        </div></div>
+                        <div className="bg-white border-t border-gray-200 p-4 fixed bottom-0 left-0 lg:left-64 right-0 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]"><div className="max-w-5xl mx-auto flex items-center justify-between"><button onClick={handleBack} className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded font-medium hover:bg-gray-50 flex items-center gap-2 transition-colors">Atrás</button><div className="flex items-center gap-3">{step < 4 ? (<button onClick={handleNext} disabled={step === 2 && actionType === ''} className={`px-6 py-2.5 rounded font-medium shadow-sm flex items-center gap-2 transition-colors ${(step === 2 && actionType === '') ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>{step === 2 ? 'Guardar y Seguir' : 'Siguiente'}</button>) : (<button className="px-6 py-2.5 bg-green-600 text-white rounded font-medium hover:bg-green-700 shadow-sm flex items-center gap-2 transition-colors" onClick={() => alert("¡Proceso finalizado!")}><icons.Send size={16} /> Firmar y Derivar</button>)}</div></div></div>
+                        {showGDLModal && (
+                            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm"><div className="bg-white w-full max-w-2xl rounded-lg shadow-xl overflow-hidden flex flex-col max-h-[85vh]"><div className="bg-[#303f9f] text-white px-6 py-4 flex justify-between items-center"><h3 className="font-bold text-lg flex items-center"><icons.FolderOpen size={20} className="mr-2 text-teal-300" /> Repositorio GDL</h3><button onClick={() => setShowGDLModal(false)}><icons.X size={20} /></button></div><div className="p-4 bg-slate-50 border-b border-slate-200"><input type="text" placeholder="Buscar documento..." className="w-full p-2 border rounded" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div><div className="flex-1 overflow-y-auto p-2 bg-slate-100">{EXP_GDL_DOCS.filter(doc => doc.title.toLowerCase().includes(searchTerm.toLowerCase())).map((doc) => { const isAdded = uploadedFiles.find(f => f.id === doc.id); return (<div key={doc.id} onClick={() => !isAdded && handleLinkDocument(doc)} className={`bg-white p-3 rounded mb-2 border shadow-sm flex items-center justify-between cursor-pointer ${isAdded ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}`}><div><p className="font-bold text-sm text-slate-700">{doc.title}</p><p className="text-xs text-slate-500">{doc.id}</p></div>{isAdded ? <span className="text-xs font-bold text-green-600">Agregado</span> : <span className="text-xs font-bold text-blue-600">Seleccionar</span>}</div>); })}</div></div></div>
+                        )}
+                    </div>
+                );
+            };
+
+            const [currentView, setCurrentView] = useState('list');
+            const [selectedFile, setSelectedFile] = useState(null);
+            const [iconsReady, setIconsReady] = useState(false);
+
+            useEffect(() => {
+                const checkIcons = setInterval(() => {
+                    if (window.lucide && window.lucide.icons) {
+                        usedIcons.forEach(name => {
+                            if (window.lucide.icons[name]) {
+                                IconsLib[name] = (props) => <Icon iconNode={window.lucide.icons[name]} {...props} />;
+                            } else {
+                                IconsLib[name] = () => null;
+                            }
+                        });
+                        // Add alias
+                        IconsLib.Link = IconsLib.Link || (() => null); 
+                        setIconsReady(true);
+                        clearInterval(checkIcons);
+                    }
+                }, 100);
+                return () => clearInterval(checkIcons);
+            }, []);
+
+            const handleSelectFile = (file) => { setSelectedFile(file); setCurrentView('detail'); };
+            const handleStartWizard = () => { setCurrentView('wizard'); };
+            const handleBack = () => { if (currentView === 'wizard') { setCurrentView('detail'); } else { setSelectedFile(null); setCurrentView('list'); } };
+
+            if (!iconsReady) return <div className="h-screen flex items-center justify-center text-blue-600">Cargando Módulos...</div>;
+
+            return (
+                <div className="flex h-screen bg-gray-100 font-sans text-gray-800 animate-fade-in">
+                    <Exp_Sidebar icons={IconsLib} />
+                    <div className="flex-1 flex flex-col min-w-0">
+                        <Exp_Header icons={IconsLib} />
+                        <main className="flex-1 overflow-hidden relative">
+                             {/* Botón flotante para salir al portal */}
+                             <button onClick={onExit} className="fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-slate-900 flex items-center gap-2 font-medium text-sm transition-transform hover:scale-105">
+                                <IconsLib.ArrowLeft size={16} /> Volver al Portal
+                            </button>
+
+                            {currentView === 'list' && (<div className="h-full overflow-y-auto"><Exp_FileListView onSelectFile={handleSelectFile} icons={IconsLib} /></div>)}
+                            {currentView === 'detail' && (<div className="h-full overflow-y-auto"><button onClick={handleBack} className="m-4 mb-0 text-sm text-blue-600 hover:underline flex items-center gap-1"><IconsLib.ArrowLeft size={16}/> Volver a la lista</button><Exp_DetailView file={selectedFile} onAction={handleStartWizard} icons={IconsLib} /></div>)}
+                            {currentView === 'wizard' && (<Exp_WizardView file={selectedFile} onBack={handleBack} icons={IconsLib} />)}
+                        </main>
+                    </div>
+                </div>
+            );
+            // --- FIN CÓDIGO EXPEDIENTE ---
+        };
+
+
+        // ==========================================
+        // 2. MÓDULO DE GESTIÓN DOCUMENTAL (GDL)
+        // ==========================================
+
+        const Gdl_Icon = ({ d, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+                {d}
+            </svg>
+        );
+
+        const Gdl_Icons = {
+            FileText: (p) => <Gdl_Icon {...p} d={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>} />,
+            Search: (p) => <Gdl_Icon {...p} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />,
+            Plus: (p) => <Gdl_Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />,
+            Filter: (p) => <Gdl_Icon {...p} d={<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>} />,
+            Download: (p) => <Gdl_Icon {...p} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />,
+            Upload: (p) => <Gdl_Icon {...p} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>} />,
+            CheckCircle: (p) => <Gdl_Icon {...p} d={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} />,
+            LinkIcon: (p) => <Gdl_Icon {...p} d={<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>} />,
+            FileCheck: (p) => <Gdl_Icon {...p} d={<><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></>} />,
+            User: (p) => <Gdl_Icon {...p} d={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />,
+            Building: (p) => <Gdl_Icon {...p} d={<><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22"/><line x1="15" y1="22" x2="15" y2="22"/><line x1="12" y1="22" x2="12" y2="22"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="4" y1="10" x2="20" y2="10"/><line x1="4" y1="14" x2="20" y2="14"/><line x1="4" y1="18" x2="20" y2="18"/></>} />,
+            ArrowRight: (p) => <Gdl_Icon {...p} d={<><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>} />,
+            ArrowLeft: (p) => <Gdl_Icon {...p} d={<><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></>} />,
+            ShieldCheck: (p) => <Gdl_Icon {...p} d={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></>} />,
+            FolderOpen: (p) => <Gdl_Icon {...p} d={<><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v2"/></>} />,
+            Edit: (p) => <Gdl_Icon {...p} d={<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>} />,
+            Monitor: (p) => <Gdl_Icon {...p} d={<><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></>} />,
+            X: (p) => <Gdl_Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />,
+            Trash: (p) => <Gdl_Icon {...p} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></>} />,
+            Home: (p) => <Gdl_Icon {...p} d={<><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>} />,
+            Shield: (p) => <Gdl_Icon {...p} d={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></>} />,
+            Settings: (p) => <Gdl_Icon {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />,
+            ChevronDown: (p) => <Gdl_Icon {...p} d={<polyline points="6 9 12 15 18 9"/>} />,
+            ChevronRight: (p) => <Gdl_Icon {...p} d={<polyline points="9 18 15 12 9 6"/>} />,
+            PlusCircle: (p) => <Gdl_Icon {...p} d={<><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></>} />,
+            Save: (p) => <Gdl_Icon {...p} d={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>} />,
+            Eye: (p) => <Gdl_Icon {...p} d={<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>} />,
+            History: (p) => <Gdl_Icon {...p} d={<><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></>} />,
+            AlertTriangle: (p) => <Gdl_Icon {...p} d={<><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />,
+            Clock: (p) => <Gdl_Icon {...p} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />,
+        };
+
+        const Gdl_SidebarItem = ({ id, icon, label, active, onClick }) => {
+            const IconComp = Gdl_Icons[icon] || Gdl_Icons.FileText;
+            return (<button onClick={() => onClick(id)} className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-colors ${active ? 'bg-blue-900 text-white border-r-4 border-blue-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}><IconComp size={20} /><span>{label}</span></button>);
+        };
+
+        const Gdl_Badge = ({ status }) => {
+            const styles = { 'Firmado': 'bg-green-100 text-green-800 border-green-200', 'Borrador': 'bg-yellow-100 text-yellow-800 border-yellow-200', 'Validado': 'bg-blue-100 text-blue-800 border-blue-200', 'Guardado': 'bg-blue-50 text-blue-800 border-blue-200', 'Vigente': 'bg-green-100 text-green-800 border-green-200', 'Activo': 'bg-green-100 text-green-800 border-green-200', 'Inactivo': 'bg-red-100 text-red-800 border-red-200' };
+            return (<span className={`px-2 py-1 rounded-full text-xs font-semibold border ${styles[status] || 'bg-gray-100'}`}>{status}</span>);
+        };
+
+        const Gdl_RepositoryView = ({ setActiveTab, documents, setDocuments }) => {
+            const [searchQuery, setSearchQuery] = useState('');
+            const [viewDoc, setViewDoc] = useState(null);
+            const [editDoc, setEditDoc] = useState(null);
+            const [deleteDoc, setDeleteDoc] = useState(null);
+            const handleUpdateDoc = () => { if (editDoc) { setDocuments(documents.map(d => d.id === editDoc.id ? editDoc : d)); setEditDoc(null); } };
+            const handleDeleteConfirm = () => { if (deleteDoc) { setDocuments(documents.filter(d => d.id !== deleteDoc.id)); setDeleteDoc(null); } };
+
+            return (
+                <div className="space-y-6 animate-fade-in relative">
+                    <div className="flex justify-between items-center"><div><h2 className="text-2xl font-bold text-slate-800">Repositorio Central</h2><p className="text-slate-500">Gestión de documentos nativos digitales</p></div><button onClick={() => setActiveTab('create')} className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition shadow-sm"><Gdl_Icons.Plus size={18} /><span>Nuevo Documento</span></button></div>
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-4 items-center"><div className="flex-1 relative"><Gdl_Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} /><input type="text" placeholder="Buscar por título, ID o metadatos..." className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div><div className="flex space-x-2"><select className="px-4 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-700 focus:outline-none"><option>Todos los Tipos</option><option>Resolución</option><option>Informe Técnico</option></select><button className="p-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50"><Gdl_Icons.Filter size={20} /></button></div></div>
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><table className="w-full text-left"><thead className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200"><tr><th className="px-6 py-4 font-semibold">Documento</th><th className="px-6 py-4 font-semibold">Autor</th><th className="px-6 py-4 font-semibold">Fecha</th><th className="px-6 py-4 font-semibold">Integración Digitalia</th><th className="px-6 py-4 font-semibold">Estado</th><th className="px-6 py-4 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{documents.filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase())).map((doc) => (<tr key={doc.id} className="hover:bg-slate-50 transition-colors group"><td className="px-6 py-4"><div className="flex items-start space-x-3"><div className="p-2 bg-blue-50 text-blue-700 rounded-lg"><Gdl_Icons.FileText size={20} /></div><div><p className="font-medium text-slate-900">{doc.title}</p><p className="text-xs text-slate-500 font-mono">{doc.id} • {doc.type}</p></div></div></td><td className="px-6 py-4 text-sm text-slate-600"><div className="flex items-center space-x-2"><Gdl_Icons.User size={14} /><span>{doc.author}</span></div></td><td className="px-6 py-4 text-sm text-slate-600"><div className="flex items-center space-x-2"><Gdl_Icons.Clock size={14} /><span>{doc.date}</span></div></td><td className="px-6 py-4">{doc.digitaliaId ? (<span className="flex items-center space-x-1 text-xs font-medium text-indigo-700 bg-indigo-50 px-2 py-1 rounded border border-indigo-100 w-fit"><Gdl_Icons.LinkIcon size={12} /><span>Vinculado: {doc.digitaliaId}</span></span>) : (<span className="text-xs text-slate-400 italic">Sin vincular</span>)}</td><td className="px-6 py-4"><Gdl_Badge status={doc.status} /></td><td className="px-6 py-4 text-right"><div className="flex justify-end space-x-1"><button onClick={() => setViewDoc(doc)} className="text-slate-400 hover:text-blue-600 p-1 transition-colors" title="Visualizar"><Gdl_Icons.Eye size={18} /></button><button onClick={() => setEditDoc({...doc})} className="text-slate-400 hover:text-amber-600 p-1 transition-colors" title="Editar"><Gdl_Icons.Edit size={18} /></button><button onClick={() => setDeleteDoc(doc)} className="text-slate-400 hover:text-red-600 p-1 transition-colors" title="Eliminar"><Gdl_Icons.Trash size={18} /></button></div></td></tr>))}</tbody></table></div>
+                    {viewDoc && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in"><div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"><div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50"><div className="flex items-center gap-3"><div className="bg-blue-100 p-2 rounded-full text-blue-600"><Gdl_Icons.FileText size={24} /></div><div><h3 className="font-bold text-lg text-slate-800">{viewDoc.title}</h3><p className="text-xs text-slate-500 font-mono">{viewDoc.id}</p></div></div><button onClick={() => setViewDoc(null)} className="text-slate-400 hover:text-slate-600"><Gdl_Icons.X size={24} /></button></div><div className="p-6 space-y-6"><div className="grid grid-cols-2 gap-6"><div><p className="text-xs text-slate-500 uppercase font-semibold mb-1">Tipo Documental</p><p className="text-slate-800 font-medium">{viewDoc.type}</p></div><div><p className="text-xs text-slate-500 uppercase font-semibold mb-1">Estado Actual</p><Gdl_Badge status={viewDoc.status} /></div><div><p className="text-xs text-slate-500 uppercase font-semibold mb-1">Autor</p><p className="text-slate-800">{viewDoc.author}</p></div><div><p className="text-xs text-slate-500 uppercase font-semibold mb-1">Fecha</p><p className="text-slate-800">{viewDoc.date}</p></div></div><div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4"><h4 className="font-bold text-indigo-900 text-sm mb-2 flex items-center gap-2"><Gdl_Icons.LinkIcon size={16} />Integración Digitalia</h4>{viewDoc.digitaliaId ? <span className="text-indigo-700 text-sm">Vinculado al expediente: <strong>{viewDoc.digitaliaId}</strong></span> : <p className="text-indigo-400 text-sm italic">Este documento no está vinculado a ningún expediente.</p>}</div><div><h4 className="font-bold text-slate-800 mb-3 flex items-center gap-2 pb-2 border-b border-slate-100"><Gdl_Icons.History size={18} className="text-slate-500" />Historial de Auditoría</h4><div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden"><table className="w-full text-left text-sm"><thead className="bg-slate-100 text-slate-600"><tr><th className="px-4 py-2 font-medium">Fecha</th><th className="px-4 py-2 font-medium">Usuario</th><th className="px-4 py-2 font-medium">Acción</th></tr></thead><tbody className="divide-y divide-slate-200"><tr><td className="px-4 py-2 text-slate-600">{viewDoc.date} 09:00</td><td className="px-4 py-2 text-slate-800 font-medium">rantola</td><td className="px-4 py-2 text-slate-600">Creación del Documento</td></tr><tr><td className="px-4 py-2 text-slate-600">{viewDoc.date} 09:15</td><td className="px-4 py-2 text-slate-800 font-medium">rantola</td><td className="px-4 py-2 text-slate-600">Firma Digital</td></tr>{viewDoc.digitaliaId && <tr><td className="px-4 py-2 text-slate-600">{viewDoc.date} 10:30</td><td className="px-4 py-2 text-slate-800 font-medium">sysadmin</td><td className="px-4 py-2 text-slate-600">Vinculación a Digitalia</td></tr>}</tbody></table></div></div></div><div className="bg-slate-50 p-4 flex justify-end gap-3 border-t border-slate-200"><button className="flex items-center gap-2 px-4 py-2 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors" onClick={() => alert("Descargando archivo...")}><Gdl_Icons.Download size={18} /><span>Descargar</span></button><button onClick={() => setViewDoc(null)} className="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-900 font-medium">Cerrar</button></div></div></div>)}
+                    {editDoc && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in"><div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden"><div className="p-6 border-b border-slate-100 flex justify-between items-center"><h3 className="font-bold text-lg text-slate-800">Editar Documento</h3><button onClick={() => setEditDoc(null)} className="text-slate-400 hover:text-slate-600"><Gdl_Icons.X size={24} /></button></div><div className="p-6 space-y-4"><div><label className="block text-sm font-medium text-slate-700 mb-1">Título del Documento</label><input type="text" value={editDoc.title} onChange={(e) => setEditDoc({...editDoc, title: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2" /></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-slate-700 mb-1">Tipo Documental</label><select value={editDoc.type} onChange={(e) => setEditDoc({...editDoc, type: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"><option>Resolución</option><option>Informe Técnico</option><option>Dictamen</option><option>Memorándum</option></select></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Etapa</label><select value={editDoc.status} onChange={(e) => setEditDoc({...editDoc, status: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"><option>Borrador</option><option>Firmado</option><option>Validado</option><option>Guardado</option></select></div></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-slate-700 mb-1">Autor Responsable</label><input type="text" value={editDoc.author} onChange={(e) => setEditDoc({...editDoc, author: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2" /></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Estado</label><select value={editDoc.activeState || 'Activo'} onChange={(e) => setEditDoc({...editDoc, activeState: e.target.value})} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-white"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div></div></div><div className="bg-slate-50 p-4 flex justify-end space-x-3 border-t border-slate-100"><button onClick={() => setEditDoc(null)} className="text-slate-600 font-medium px-4 py-2 hover:bg-slate-200 rounded-lg">Cancelar</button><button onClick={handleUpdateDoc} className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 font-medium flex items-center gap-2"><Gdl_Icons.Save size={18} />Guardar Cambios</button></div></div></div>)}
+                    {deleteDoc && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in"><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center"><div className="mx-auto bg-red-100 w-16 h-16 rounded-full flex items-center justify-center text-red-600 mb-4"><Gdl_Icons.AlertTriangle size={32} /></div><h3 className="font-bold text-lg text-slate-800 mb-2">¿Eliminar Documento?</h3><p className="text-slate-600 text-sm mb-4">Está a punto de eliminar <strong>"{deleteDoc.title}"</strong>.</p><div className="bg-red-50 p-3 rounded-lg text-xs text-red-800 mb-6 text-left"><strong>Advertencia:</strong> Esta acción eliminará el documento del repositorio y romperá cualquier enlace existente con Digitalia.</div><div className="flex space-x-3 justify-center"><button onClick={() => setDeleteDoc(null)} className="bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 font-medium">Cancelar</button><button onClick={handleDeleteConfirm} className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium flex items-center gap-2"><Gdl_Icons.Trash size={18} />Confirmar Eliminación</button></div></div></div>)}
+                </div>
+            );
+        };
+
+        const Gdl_ValidateDocumentView = () => {
+            const [code, setCode] = useState('');
+            const [validationResult, setValidationResult] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const handleValidate = (e) => { e.preventDefault(); if (!code) return; setLoading(true); setValidationResult(null); setTimeout(() => { setLoading(false); setValidationResult({ valid: true, docId: 'DOC-2026-001', title: 'Resolución Ministerial 45/2026', date: '2026-02-02', author: 'Rodrigo Antola', hash: '8a7b9c1d2e3f4g5h6i7j8k9l0m...', status: 'Vigente' }); }, 1500); };
+            return (<div className="max-w-3xl mx-auto space-y-8 animate-fade-in"><div className="text-center space-y-2"><h2 className="text-2xl font-bold text-slate-800">Validación de Documentos</h2><p className="text-slate-500">Verifique la autenticidad e integridad de los documentos emitidos.</p></div><div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200"><form onSubmit={handleValidate} className="space-y-4"><label className="block text-sm font-medium text-slate-700">Código de Verificación (CVD) o Hash</label><div className="flex gap-4"><input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ej: 8a7b9c..." className="flex-1 border border-slate-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-sm" /><button type="submit" disabled={loading || !code} className={`px-6 py-3 rounded-lg text-white font-medium flex items-center space-x-2 min-w-[140px] justify-center transition-colors ${loading || !code ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-900 hover:bg-blue-800'}`}>{loading ? '...' : <span>Validar</span>}</button></div></form>{validationResult && (<div className="mt-8 border-t border-slate-100 pt-6 animate-fade-in"><div className={`p-4 rounded-lg flex items-center space-x-3 mb-6 ${validationResult.valid ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50'}`}><Gdl_Icons.CheckCircle size={24} /><div><p className="font-bold text-lg">Documento Auténtico</p></div></div>{validationResult.valid && (<div className="grid grid-cols-2 gap-6 text-sm"><div className="space-y-4"><div><span className="block text-xs text-slate-500 uppercase font-semibold">Documento</span><span className="block font-medium text-slate-800">{validationResult.title}</span></div></div><div className="space-y-4"><div><span className="block text-xs text-slate-500 uppercase font-semibold">Estado</span><Gdl_Badge status={validationResult.status} /></div></div></div>)}</div>)}</div></div>);
+        };
+
+        const Gdl_AdminTypesView = () => {
+            const [docTypes, setDocTypes] = useState([{ id: 1, name: 'Resolución Ministerial', code: 'RES', status: 'Activo', format: 'RES-12021001-0001', hasTemplate: true }, { id: 2, name: 'Informe Técnico', code: 'INF', status: 'Activo', format: 'INF-12021001-0001', hasTemplate: true }]);
+            const [isCreating, setIsCreating] = useState(false);
+            const [allSystemFields] = useState([ { id: 1, label: 'Asunto Principal' }, { id: 3, label: 'Fecha de Vigencia' }, { id: 5, label: 'Observaciones' }, { id: 9, label: 'Título del Documento' }, { id: 10, label: 'Fecha del Documento' }, { id: 11, label: 'Tipo de Visibilidad' } ]);
+            const [availableFields, setAvailableFields] = useState([...allSystemFields]);
+            const [assignedFields, setAssignedFields] = useState([]);
+            const [newType, setNewType] = useState({ name: '', code: '', template: null });
+            const [viewType, setViewType] = useState(null);
+            const [editType, setEditType] = useState(null);
+            const [deleteType, setDeleteType] = useState(null);
+
+            const moveField = (field, direction) => { if (direction === 'toRight') { setAvailableFields(availableFields.filter(f => f.id !== field.id)); setAssignedFields([...assignedFields, field]); } else { setAssignedFields(assignedFields.filter(f => f.id !== field.id)); setAvailableFields([...availableFields, field]); } };
+            const resetFields = () => { setAvailableFields([...allSystemFields]); setAssignedFields([]); };
+            const handleSave = () => { if (newType.name && newType.code) { setDocTypes([...docTypes, { id: docTypes.length + 1, ...newType, status: 'Activo', format: `${newType.code}-12021001-0001`, hasTemplate: !!newType.template, fields: assignedFields }]); setIsCreating(false); setNewType({ name: '', code: '', template: null }); resetFields(); } };
+
+            return (<div className="space-y-6 animate-fade-in relative"><div className="flex justify-between items-center"><div><h2 className="text-2xl font-bold text-slate-800">Administración de Tipos</h2></div>{!isCreating && <button onClick={() => { setIsCreating(true); resetFields(); }} className="bg-blue-900 hover:bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Gdl_Icons.PlusCircle size={18} /><span>Crear Tipo</span></button>}</div>{isCreating ? (<div className="bg-white p-6 rounded-xl shadow-lg border border-slate-200 max-w-4xl mx-auto"><div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"><h3 className="text-lg font-semibold text-slate-800">Nuevo Tipo de Documento</h3><button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600"><Gdl_Icons.X size={20} /></button></div><div className="grid grid-cols-2 gap-8"><div className="space-y-4"><div><label className="block text-sm font-medium text-slate-700 mb-1">Nombre</label><input type="text" value={newType.name} onChange={(e) => { const name = e.target.value; setNewType({ ...newType, name: name, code: name.slice(0, 3).toUpperCase() }) }} className="w-full border border-slate-300 rounded-lg px-3 py-2" /></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Código</label><input type="text" value={newType.code} onChange={(e) => setNewType({...newType, code: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-lg px-3 py-2 bg-slate-50" /><p className="text-xs text-slate-400 mt-1">Formato: {newType.code ? `${newType.code}-12021001-0001` : 'CODIGO-12021001-0001'}</p></div><div><label className="block text-sm font-medium text-slate-700 mb-1">Plantilla (.docx)</label><div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:bg-slate-50 transition cursor-pointer" onClick={() => document.getElementById('template-upload').click()}><input id="template-upload" type="file" className="hidden" accept=".docx" onChange={(e) => { if (e.target.files?.[0]) setNewType({...newType, template: e.target.files[0].name}); }} />{newType.template ? <span className="text-blue-600 font-medium">{newType.template}</span> : <div className="space-y-1"><div className="mx-auto bg-slate-100 w-10 h-10 rounded-full flex items-center justify-center text-slate-400"><Gdl_Icons.Upload size={20} /></div><p className="text-sm text-slate-500">Subir .docx</p></div>}</div></div></div><div className="space-y-2"><label className="block text-sm font-medium text-slate-700 mb-2">Campos (Metadatos)</label><div className="flex gap-2 h-64"><div className="flex-1 border border-slate-300 rounded-lg flex flex-col"><div className="bg-slate-100 p-2 text-xs font-semibold text-center">Disponibles</div><div className="flex-1 overflow-y-auto p-2 space-y-1">{availableFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toRight')} className="p-2 bg-white border border-slate-100 rounded text-sm cursor-pointer hover:bg-blue-50 flex justify-between"><span>{field.label}</span><Gdl_Icons.ArrowRight size={14} className="text-slate-300"/></div>))}</div></div><div className="flex-1 border border-blue-200 rounded-lg flex flex-col bg-blue-50/30"><div className="bg-blue-100 p-2 text-xs font-semibold text-blue-800 text-center">Asociados</div><div className="flex-1 overflow-y-auto p-2 space-y-1">{assignedFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toLeft')} className="p-2 bg-white border border-blue-100 rounded text-sm cursor-pointer hover:bg-red-50 flex justify-between"><Gdl_Icons.ArrowLeft size={14} className="text-blue-300"/><span>{field.label}</span></div>))}</div></div></div></div></div><div className="pt-6 flex justify-end space-x-3 border-t border-slate-100 mt-6"><button onClick={() => setIsCreating(false)} className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700">Cancelar</button><button onClick={handleSave} className="bg-blue-900 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Gdl_Icons.Save size={18} /><span>Guardar</span></button></div></div>) : (<div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><table className="w-full text-left"><thead className="bg-slate-50 text-slate-600 text-sm border-b border-slate-200"><tr><th className="px-6 py-4">Nombre</th><th className="px-6 py-4">Código</th><th className="px-6 py-4">Formato</th><th className="px-6 py-4">Acciones</th></tr></thead><tbody className="divide-y divide-slate-100">{docTypes.map(t => (<tr key={t.id} className="hover:bg-slate-50"><td className="px-6 py-4">{t.name}</td><td className="px-6 py-4 font-mono text-sm">{t.code}</td><td className="px-6 py-4 font-mono text-sm">{t.format}</td><td className="px-6 py-4 text-right"><div className="flex justify-end space-x-1"><button onClick={() => setViewType(t)} className="p-1 text-slate-400 hover:text-blue-600"><Gdl_Icons.Eye size={18} /></button><button onClick={() => setEditType(t)} className="p-1 text-slate-400 hover:text-amber-600"><Gdl_Icons.Edit size={18} /></button><button onClick={() => setDeleteType(t)} className="p-1 text-slate-400 hover:text-red-600"><Gdl_Icons.Trash size={18} /></button></div></td></tr>))}</tbody></table></div>)}{viewType && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3>{viewType.name}</h3><p className="mt-2 text-sm text-slate-500">Código: {viewType.code}</p><div className="mt-4 flex justify-end"><button onClick={() => setViewType(null)} className="px-4 py-2 bg-slate-200 rounded">Cerrar</button></div></div></div>}{editType && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3>Editar: {editType.name}</h3><p className="text-sm mt-2">Funcionalidad de edición completa en versión React</p><div className="mt-4 flex justify-end"><button onClick={() => setEditType(null)} className="px-4 py-2 bg-slate-200 rounded">Cerrar</button></div></div></div>}{deleteType && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3>¿Eliminar {deleteType.name}?</h3><div className="mt-4 flex justify-end gap-2"><button onClick={() => setDeleteType(null)} className="px-4 py-2 bg-slate-200 rounded">Cancelar</button><button className="px-4 py-2 bg-red-600 text-white rounded">Eliminar</button></div></div></div>}</div>);
+        };
+
+        const Gdl_CreateDocumentView = ({ setActiveTab, documents, setDocuments }) => {
+            const [step, setStep] = useState(1);
+            const [creationMode, setCreationMode] = useState('word');
+            const [downloadingTemplate, setDownloadingTemplate] = useState(null);
+            const [selectedTemplate, setSelectedTemplate] = useState(null);
+            const [uploading, setUploading] = useState(false);
+            const [isSaved, setIsSaved] = useState(false);
+            const [showDigitaliaModal, setShowDigitaliaModal] = useState(false);
+            const [relatedTramites, setRelatedTramites] = useState([]);
+            const [digitaliaSearch, setDigitaliaSearch] = useState('');
+            const [selectedDigitaliaExp, setSelectedDigitaliaExp] = useState(null);
+            const [digitaliaSearchResults, setDigitaliaSearchResults] = useState([]);
+            const [formData, setFormData] = useState({ title: '', date: new Date().toISOString().split('T')[0], responsible: 'Cynthia Gonzalez', visibility: 'Público', content: 'Se procede a la firma...' });
+            const handleDownloadTemplate = (e, type) => { e.stopPropagation(); setDownloadingTemplate(type); setTimeout(() => { const element = document.createElement("a"); const fileContent = `Plantilla Oficial para ${type}\n\nGobierno Nacional\n\n[Espacio reservado para contenido]`; const file = new Blob([fileContent], {type: 'text/plain'}); element.href = URL.createObjectURL(file); element.download = `Plantilla_${type.replace(' ', '_')}.docx`; document.body.appendChild(element); element.click(); document.body.removeChild(element); setDownloadingTemplate(null); }, 1000); };
+            const handleUpload = () => { setUploading(true); setTimeout(() => { setUploading(false); setStep(3); }, 2000); };
+            const handleFormSubmit = () => { setUploading(true); setTimeout(() => { setUploading(false); setStep(3); }, 1500); };
+            const handleSaveRepository = () => { setIsSaved(true); setDocuments(prev => [{ id: `DOC-${Date.now()}`, title: creationMode === 'form' ? formData.title : `${selectedTemplate} N° 2026/45`, type: selectedTemplate || 'Documento', author: formData.responsible, date: formData.date, status: 'Guardado', digitaliaId: null }, ...prev]); };
+            const handleSearchDigitalia = () => { if (digitaliaSearch.length > 0) { setDigitaliaSearchResults([{ id: 'EXP-2026-8812', title: 'Solicitud de Insumos - Dpto. IT' }, { id: 'EXP-2026-9923', title: 'Auditoría Financiera Q1' }, { id: 'EXP-2026-1024', title: 'Reestructuración de Personal' }].filter(e => e.id.toLowerCase().includes(digitaliaSearch.toLowerCase()) || e.title.toLowerCase().includes(digitaliaSearch.toLowerCase()))); } else { setDigitaliaSearchResults([]); } };
+            const handleAddTramite = () => { if (selectedDigitaliaExp && !relatedTramites.find(t => t.id === selectedDigitaliaExp.id)) { setRelatedTramites([...relatedTramites, selectedDigitaliaExp]); setSelectedDigitaliaExp(null); setDigitaliaSearch(''); setDigitaliaSearchResults([]); } };
+            const handleSaveRelations = () => { setShowDigitaliaModal(false); if (relatedTramites.length > 0) alert(`Vinculados ${relatedTramites.length} trámites.`); };
+
+            return (<div className="max-w-4xl mx-auto space-y-8 animate-fade-in"><div className="mb-8"><button onClick={() => setActiveTab('repository')} className="text-sm text-slate-500 hover:text-blue-900 mb-2 flex items-center">← Volver al repositorio</button><h2 className="text-2xl font-bold text-slate-800">Generador de Documentos (GDL)</h2></div><div className="flex items-center justify-between px-10 relative"><div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-slate-200 -z-10"></div>{[1, 2, 3].map(s => (<div key={s} className={`flex flex-col items-center px-2 ${step >= s ? 'text-blue-900' : 'text-slate-400'}`}><div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold border-2 ${step >= s ? 'bg-blue-900 text-white' : 'bg-white'}`}>{s}</div></div>))}</div><div className="bg-white p-8 rounded-xl shadow-lg border border-slate-200 min-h-[400px]">{step === 1 && (<div className="space-y-6 animate-fade-in"><h3 className="text-lg font-semibold">1. Seleccione método y tipo</h3><div className="flex space-x-4 mb-6"><button onClick={() => setCreationMode('word')} className={`flex-1 p-4 rounded-xl border-2 flex items-center justify-center gap-2 ${creationMode === 'word' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}><Gdl_Icons.FileText/> Plantilla Word</button><button onClick={() => setCreationMode('form')} className={`flex-1 p-4 rounded-xl border-2 flex items-center justify-center gap-2 ${creationMode === 'form' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}><Gdl_Icons.Monitor/> Formulario Web</button></div><div className="grid grid-cols-2 gap-4">{['Resolución Ministerial', 'Informe Técnico', 'Dictamen Jurídico', 'Memorándum'].map(type => (<div key={type} onClick={() => setSelectedTemplate(type)} className={`border rounded-lg p-4 cursor-pointer flex justify-between items-center ${selectedTemplate === type ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}><div className="flex items-center gap-3"><div className="p-2 bg-blue-100 text-blue-600 rounded"><Gdl_Icons.FileText size={20}/></div><span className="font-medium">{type}</span></div>{creationMode === 'word' && (<button onClick={(e) => handleDownloadTemplate(e, type)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-full">{downloadingTemplate === type ? '...' : <Gdl_Icons.Download size={20}/>}</button>)}</div>))}</div><div className="flex justify-end pt-4"><button onClick={() => setStep(2)} disabled={!selectedTemplate} className={`px-6 py-2 rounded-lg text-white ${!selectedTemplate ? 'bg-slate-300' : 'bg-blue-900'}`}>Continuar</button></div></div>)}{step === 2 && (<div className="space-y-6 animate-fade-in">{creationMode === 'word' ? (<div className="text-center space-y-6"><h3 className="text-lg font-semibold">2. Suba su documento</h3><p className="text-slate-600">Suba el archivo <strong>{selectedTemplate}</strong> editado.</p><div className="border-2 border-dashed border-slate-300 rounded-xl p-12 hover:bg-slate-50 cursor-pointer" onClick={handleUpload}>{uploading ? <p>Procesando...</p> : <div><div className="mx-auto bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center text-blue-600 mb-2"><Gdl_Icons.Upload size={32}/></div><p>Clic para subir .DOCX</p></div>}</div></div>) : (<div className="space-y-4"><div className="flex justify-between"><h3 className="text-lg font-semibold">2. Complete datos</h3><span className="text-xs bg-slate-100 px-2 py-1 rounded">Formulario Web</span></div><div className="grid grid-cols-3 gap-4"><div className="col-span-2"><label className="block text-sm mb-1">Título</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border rounded p-2"/></div><div><label className="block text-sm mb-1">Fecha</label><input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border rounded p-2"/></div></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-sm mb-1">Responsable</label><input type="text" value={formData.responsible} onChange={e => setFormData({...formData, responsible: e.target.value})} className="w-full border rounded p-2"/></div><div><label className="block text-sm mb-1">Visibilidad</label><select value={formData.visibility} onChange={e => setFormData({...formData, visibility: e.target.value})} className="w-full border rounded p-2 bg-white"><option>Público</option><option>Privado</option></select></div></div><div><label className="block text-sm mb-1">Cuerpo</label><textarea rows={5} value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full border rounded p-2"></textarea></div><div className="flex justify-end"><button onClick={handleFormSubmit} className="bg-blue-900 text-white px-6 py-2 rounded">{uploading ? 'Generando...' : 'Generar Vista Previa'}</button></div></div>)}<div className="flex justify-start"><button onClick={() => setStep(1)} className="text-sm text-slate-500 hover:text-blue-900">← Volver</button></div></div>)}{step === 3 && (<div className="space-y-6 animate-fade-in"><div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded border border-green-200"><Gdl_Icons.CheckCircle size={20} /><span className="font-medium">Documento procesado exitosamente</span></div><div className="flex gap-6"><div className="flex-1 bg-slate-100 p-4 rounded border h-96 overflow-y-auto"><div className="bg-white shadow p-8 min-h-full text-[10px] space-y-4"><div className="text-center"><h1 className="font-bold text-lg uppercase">{creationMode === 'form' ? formData.title : `${selectedTemplate} N° 2026/45`}</h1><p>Generado por GDL</p></div><div className="text-justify"><p>{creationMode === 'form' ? formData.content : 'Se procede a la firma...'}</p><div className="p-4 bg-slate-50 border rounded mt-4"><p className="font-bold">Validación:</p><p>Hash: 8a7b9c...</p></div></div></div></div><div className="w-1/3 space-y-4"><h4>Acciones</h4><button onClick={handleSaveRepository} disabled={isSaved} className={`w-full py-3 rounded flex justify-center gap-2 ${isSaved ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-blue-900 text-white'}`}>{isSaved ? <Gdl_Icons.CheckCircle size={18}/> : <Gdl_Icons.FileCheck size={18}/>}<span>{isSaved ? 'Guardado' : 'Guardar'}</span></button><div className="relative"><button onClick={() => setShowDigitaliaModal(true)} disabled={!isSaved} className={`w-full border py-3 rounded flex justify-center gap-2 ${!isSaved ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 text-white'}`}><Gdl_Icons.LinkIcon size={18}/><span>Digitalia</span></button>{!isSaved && <p className="text-[10px] text-center text-slate-400 mt-1">* Guardar primero</p>}</div></div></div></div>)}</div>{showDigitaliaModal && (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white rounded-xl p-6 w-full max-w-lg"><h3 className="font-bold text-lg mb-4">Relacionar a Trámite</h3><div className="flex gap-2 mb-4"><input type="text" value={digitaliaSearch} onChange={e => setDigitaliaSearch(e.target.value)} className="flex-1 border p-2 rounded" placeholder="Buscar expediente (ej. EXP-2026)..."/><button onClick={handleSearchDigitalia} className="bg-blue-900 text-white px-3 rounded">Buscar</button></div>{digitaliaSearchResults.length > 0 && !selectedDigitaliaExp && (<div className="mb-4 border rounded max-h-32 overflow-y-auto">{digitaliaSearchResults.map(exp => (<div key={exp.id} onClick={() => setSelectedDigitaliaExp(exp)} className="p-2 hover:bg-blue-50 cursor-pointer border-b last:border-0"><p className="font-bold text-sm">{exp.id}</p><p className="text-xs text-slate-600">{exp.title}</p></div>))}</div>)}{selectedDigitaliaExp && (<div className="bg-blue-50 p-2 mb-4 rounded flex justify-between items-center"><div><p className="font-bold text-sm">{selectedDigitaliaExp.id}</p><p className="text-xs text-slate-600">{selectedDigitaliaExp.title}</p></div><button onClick={handleAddTramite} className="text-white bg-green-600 px-3 py-1 rounded text-sm hover:bg-green-700">Agregar</button></div>)}<div className="mb-4 text-sm text-slate-500 border-t pt-2"><p className="font-semibold mb-1">Vinculados ({relatedTramites.length}):</p><ul className="list-disc pl-5 max-h-24 overflow-y-auto">{relatedTramites.map((t, i) => (<li key={i}>{t.id}</li>))}</ul></div><div className="flex justify-end gap-2"><button onClick={() => setShowDigitaliaModal(false)} className="text-slate-600">Cerrar</button><button onClick={handleSaveRelations} className="bg-blue-900 text-white px-4 py-2 rounded">Confirmar</button></div></div></div>)}</div>);
+        };
+
+        const Gdl_IntegrationView = () => <div className="p-6 text-center text-slate-500">Módulo de Integración Masiva (Placeholder)</div>;
+
+        const GestionDocumentalSystem = ({ onExit }) => {
+            const [activeTab, setActiveTab] = useState('repository');
+            const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+            const [documents, setDocuments] = useState([{ id: 'DOC-2026-001', title: 'Resolución Ministerial 45/2026', type: 'Resolución', author: 'Rodrigo Antola', date: '2026-02-02', status: 'Firmado', digitaliaId: 'EXP-9923' }, { id: 'DOC-2026-002', title: 'Informe Técnico Auditoría', type: 'Informe Técnico', author: 'Cynthia Gonzalez', date: '2026-02-01', status: 'Borrador', digitaliaId: null }]);
+
+            return (
+                <div className="flex h-screen bg-slate-100 font-sans text-slate-900 animate-fade-in relative">
+                    <div className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20">
+                        <div className="p-6 border-b border-slate-800"><div className="flex items-center space-x-3"><div className="bg-white/10 p-2 rounded-lg"><Gdl_Icons.Building size={24} className="text-blue-400" /></div><div><h1 className="font-bold text-lg leading-tight">Gestión Documental</h1><p className="text-xs text-slate-400">Gobierno Nacional</p></div></div></div>
+                        <nav className="flex-1 py-6 space-y-1">
+                            <Gdl_SidebarItem id="repository" icon="FolderOpen" label="Repositorio" active={activeTab === 'repository'} onClick={setActiveTab} />
+                            <Gdl_SidebarItem id="create" icon="Plus" label="Nuevo Documento" active={activeTab === 'create'} onClick={setActiveTab} />
+                            <Gdl_SidebarItem id="validate" icon="Shield" label="Validar Documento" active={activeTab === 'validate'} onClick={setActiveTab} />
+                            <Gdl_SidebarItem id="integration" icon="LinkIcon" label="Digitalia" active={activeTab === 'integration'} onClick={setActiveTab} />
+                            <div><button onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)} className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white"><div className="flex items-center space-x-3"><Gdl_Icons.Settings size={20} /><span>Administración</span></div>{isAdminMenuOpen ? <Gdl_Icons.ChevronDown size={16} /> : <Gdl_Icons.ChevronRight size={16} />}</button>{isAdminMenuOpen && <div className="bg-slate-950 py-1"><button onClick={() => setActiveTab('admin_types')} className="w-full flex items-center space-x-3 pl-12 pr-4 py-2 text-sm font-medium text-slate-500 hover:text-white"><span>Tipos de Documento</span></button></div>}</div>
+                        </nav>
+                        <div className="p-4 bg-slate-800 m-4 rounded-xl"><div className="flex items-center space-x-3 mb-2"><div className="bg-blue-500 rounded-full p-1"><Gdl_Icons.User size={14} className="text-white" /></div><div><p className="text-sm font-medium">Cynthia Gonzalez</p><p className="text-xs text-slate-400">Analista</p></div></div></div>
+                    </div>
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <header className="bg-white shadow-sm border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10"><div><h2 className="text-xl font-semibold text-slate-800">{activeTab === 'repository' ? 'Bandeja de Documentos' : activeTab === 'create' ? 'Generación de Documentos' : activeTab === 'validate' ? 'Validación Pública' : activeTab === 'integration' ? 'Interoperabilidad' : 'Administración'}</h2></div><div className="flex items-center space-x-4"><div className="text-right hidden md:block"><p className="text-xs text-slate-500">Última sincronización</p><p className="text-sm font-medium text-slate-700">Hoy, 10:00 AM</p></div></div></header>
+                        <main className="flex-1 overflow-auto p-8">
+                            
+                             {/* Botón flotante para salir al portal */}
+                             <button onClick={onExit} className="fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-2 rounded-full shadow-lg hover:bg-slate-900 flex items-center gap-2 font-medium text-sm transition-transform hover:scale-105">
+                                <Gdl_Icons.ArrowLeft size={16} /> Volver al Portal
+                            </button>
+
+                            {activeTab === 'repository' && <Gdl_RepositoryView setActiveTab={setActiveTab} documents={documents} setDocuments={setDocuments} />}
+                            {activeTab === 'create' && <Gdl_CreateDocumentView setActiveTab={setActiveTab} documents={documents} setDocuments={setDocuments} />}
+                            {activeTab === 'validate' && <Gdl_ValidateDocumentView />}
+                            {activeTab === 'integration' && <Gdl_IntegrationView />}
+                            {activeTab === 'admin_types' && <Gdl_AdminTypesView />}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentSystem, setCurrentSystem] = useState('landing'); // landing | expediente | gestion
+
+            return (
+                <div className="h-full">
+                    {currentSystem === 'landing' && (
+                        <PortalScreen onNavigate={setCurrentSystem} />
+                    )}
+                    {currentSystem === 'expediente' && (
+                        <ExpedienteSystem onExit={() => setCurrentSystem('landing')} />
+                    )}
+                    {currentSystem === 'gestion' && (
+                        <GestionDocumentalSystem onExit={() => setCurrentSystem('landing')} />
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
