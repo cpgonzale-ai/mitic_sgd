@@ -20,6 +20,13 @@
     <!-- Babel para JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- jsPDF para generación de PDFs y AutoTable para tablas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Librería para generar el Código QR real -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
     <!-- Configuración Tailwind & Estilos -->
     <script>
         tailwind.config = {
@@ -133,14 +140,14 @@
             return (
                 <button
                     onClick={() => onClick(id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 group ${
+                    className={`w-full flex items-center space-x-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mb-1 group text-left ${
                         active 
                             ? 'bg-brand-800 text-white shadow-md shadow-brand-900/20 translate-x-1' 
                             : 'text-slate-400 hover:bg-slate-800/50 hover:text-white hover:translate-x-1'
                     }`}
                 >
-                    <IconComp size={20} className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
-                    <span>{label}</span>
+                    <IconComp size={20} className={`shrink-0 ${active ? 'text-white' : 'text-slate-400 group-hover:text-white'} transition-colors`} />
+                    <span className="leading-tight">{label}</span>
                 </button>
             );
         };
@@ -190,7 +197,7 @@
             const [searchQuery, setSearchQuery] = useState('');
             const currentUser = 'Cynthia Gonzalez'; // Usuario actual simulado
             
-            // Estado para filtros por columna (Actualizado con type y keyword)
+            // Estado para filtros por columna
             const [columnFilters, setColumnFilters] = useState({
                 title: '',
                 type: '',
@@ -232,7 +239,7 @@
                 const matchesExp = (doc.digitaliaId || '').toLowerCase().includes(columnFilters.digitaliaId.toLowerCase());
                 const matchesStatus = columnFilters.status === '' || doc.status === columnFilters.status;
                 
-                // Filtro específico para "Mis Documentos"
+                // Filtro específico para "Mi Dependencia"
                 const matchesUser = onlyUserDocs ? doc.author === currentUser : true;
 
                 return matchesGlobal && matchesTitle && matchesType && matchesKeyword && matchesAuthor && matchesDate && matchesInst && matchesExp && matchesStatus && matchesUser;
@@ -242,7 +249,7 @@
                 <div className="space-y-8 animate-fadeIn relative p-2">
                     <div className="flex justify-between items-center">
                         <div>
-                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{onlyUserDocs ? 'Mis Documentos' : 'Repositorio Central'}</h2>
+                            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{onlyUserDocs ? 'Mi Dependencia' : 'Repositorio Central'}</h2>
                             <p className="text-slate-500 mt-1">{onlyUserDocs ? 'Gestión de documentos creados por mi usuario' : 'Gestión integral de documentos nativos digitales'}</p>
                         </div>
                         <Button onClick={() => setActiveTab('create')}>
@@ -312,7 +319,7 @@
                                     <th className="px-6 pb-4 pt-0">
                                         <input 
                                             type="text" 
-                                            placeholder="Clave..." 
+                                            placeholder="Palabra Clave..." 
                                             className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white"
                                             value={columnFilters.keyword}
                                             onChange={(e) => setColumnFilters({...columnFilters, keyword: e.target.value})}
@@ -330,7 +337,7 @@
                                     <th className="px-6 pb-4 pt-0">
                                         <input 
                                             type="text" 
-                                            placeholder="Fecha..." 
+                                            placeholder="AAAA-MM-DD" 
                                             className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white text-center"
                                             value={columnFilters.date}
                                             onChange={(e) => setColumnFilters({...columnFilters, date: e.target.value})}
@@ -425,7 +432,7 @@
                         </table>
                     </Card>
 
-                    {/* Modales (Mejorados Visualmente) */}
+                    {/* Modales */}
                     {viewDoc && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
                             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scaleIn">
@@ -479,7 +486,6 @@
                         </div>
                     )}
                     
-                    {/* Modal Editar */}
                     {editDoc && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
                             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn">
@@ -495,7 +501,6 @@
                                     </div>
                                     <div className="grid grid-cols-2 gap-6">
                                         <div><label className="block text-sm font-semibold text-slate-700 mb-2">Autor</label><input type="text" value={editDoc.author} onChange={(e) => setEditDoc({...editDoc, author: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 outline-none" /></div>
-                                        {/* Eliminamos el segundo selector de estado redundante o lo reutilizamos para otra meta-data si fuera necesario */}
                                     </div>
                                 </div>
                                 <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-100">
@@ -506,7 +511,6 @@
                         </div>
                     )}
                     
-                    {/* Modal Eliminar */}
                     {deleteDoc && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
                             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-8 text-center animate-scaleIn">
@@ -524,269 +528,6 @@
             );
         };
 
-        const ValidateDocumentView = () => {
-            const [code, setCode] = useState('');
-            const [validationResult, setValidationResult] = useState(null);
-            const [loading, setLoading] = useState(false);
-
-            const handleValidate = (e) => {
-                e.preventDefault();
-                if (!code) return;
-                setLoading(true);
-                setTimeout(() => {
-                    setLoading(false);
-                    setValidationResult({ valid: true, docId: 'DOC-2026-001', title: 'Resolución Ministerial 45/2026', date: '2026-02-02', author: 'Rodrigo Antola', hash: '8a7b9c1d2e3f4g5h6i7j8k9l0m...', status: 'Activo' });
-                }, 1500);
-            };
-
-            return (
-                <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn py-10">
-                    <div className="text-center space-y-3">
-                        <div className="mx-auto bg-brand-100 w-16 h-16 rounded-2xl flex items-center justify-center text-brand-600 mb-4 shadow-glow"><Icons.ShieldCheck size={36} /></div>
-                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Validación Pública</h2>
-                        <p className="text-slate-500 max-w-md mx-auto">Verifique la autenticidad e integridad de los documentos.</p>
-                    </div>
-
-                    <Card className="p-8">
-                        <form onSubmit={handleValidate} className="space-y-6">
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-2">Código de Verificación</label>
-                                <div className="flex gap-3">
-                                    <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ej: 8a7b9c..." className="flex-1 border border-slate-300 rounded-xl px-5 py-3 text-lg font-mono tracking-wide focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all" />
-                                    <button type="button" className="px-4 py-3 border border-slate-300 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors" title="Escanear QR"><Icons.QrCode size={24} /></button>
-                                </div>
-                            </div>
-                            <Button variant="primary" className="w-full py-4 text-lg !shadow-xl hover:!shadow-2xl" disabled={loading || !code}>
-                                {loading ? <span className="animate-pulse">Validando...</span> : <><Icons.ShieldCheck size={24} /> Validar Integridad</>}
-                            </Button>
-                        </form>
-                    </Card>
-
-                    {validationResult && (
-                         <div className="bg-white rounded-2xl shadow-xl border-l-4 border-emerald-500 overflow-hidden animate-scaleIn">
-                             <div className="p-6 bg-emerald-50/50 flex items-start gap-4">
-                                <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full"><Icons.CheckCircle size={24} /></div>
-                                <div><h3 className="font-bold text-emerald-900 text-lg">Documento Auténtico</h3><p className="text-emerald-700 text-sm">La firma digital y el sello de integridad son válidos.</p></div>
-                             </div>
-                             <div className="p-8 grid grid-cols-2 gap-y-6 gap-x-8 text-sm">
-                                <div className="col-span-2">
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Documento</p>
-                                    <p className="text-lg font-semibold text-slate-900">{validationResult.title}</p>
-                                </div>
-                                <div><p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">ID</p><p className="font-mono text-slate-700">{validationResult.docId}</p></div>
-                                <div><p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Estado</p><Badge status={validationResult.status} /></div>
-                                <div className="col-span-2 pt-4 border-t border-slate-100">
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Huella Digital (Hash)</p>
-                                    <div className="bg-slate-100 text-slate-600 p-3 rounded-lg font-mono text-xs break-all">{validationResult.hash}</div>
-                                </div>
-                             </div>
-                          </div>
-                    )}
-                </div>
-            );
-        };
-
-        const AdminTypesView = () => {
-             // Estado Inicial con campos asignados de ejemplo
-            const [allSystemFields] = useState([ { id: 1, label: 'Asunto Principal' }, { id: 3, label: 'Fecha de Vigencia' }, { id: 5, label: 'Observaciones' }, { id: 9, label: 'Título del Documento' }, { id: 10, label: 'Fecha del Documento' }, { id: 11, label: 'Tipo de Visibilidad' }, { id: 6, label: 'Número de Expediente Relacionado' }, { id: 7, label: 'Departamento Solicitante' } ]);
-            
-            const [docTypes, setDocTypes] = useState([
-                { id: 1, name: 'Resolución Ministerial', code: 'RES', status: 'Activo', format: 'RES-12021001-0001', hasTemplate: true, fields: [allSystemFields[0], allSystemFields[3]] },
-                { id: 2, name: 'Informe Técnico', code: 'INF', status: 'Activo', format: 'INF-12021001-0001', hasTemplate: true, fields: [allSystemFields[5], allSystemFields[6]] }
-            ]);
-            
-            const [isCreating, setIsCreating] = useState(false);
-            
-            // Estados para Campos Dinámicos
-            const [availableFields, setAvailableFields] = useState([]);
-            const [assignedFields, setAssignedFields] = useState([]);
-
-            const [newType, setNewType] = useState({ name: '', code: '', template: null });
-            
-            // Estados para Modales de Administración
-            const [viewType, setViewType] = useState(null);
-            const [editType, setEditType] = useState(null);
-            const [deleteType, setDeleteType] = useState(null);
-
-            const moveField = (field, direction) => {
-                if (direction === 'toRight') {
-                    setAvailableFields(prev => prev.filter(f => f.id !== field.id));
-                    setAssignedFields(prev => [...prev, field]);
-                } else {
-                    setAssignedFields(prev => prev.filter(f => f.id !== field.id));
-                    setAvailableFields(prev => [...prev, field]);
-                }
-            };
-
-            const resetFields = () => { setAvailableFields([...allSystemFields]); setAssignedFields([]); };
-            
-            // Handlers de creación
-            const handleSave = () => { 
-                if (newType.name && newType.code) { 
-                    setDocTypes([...docTypes, { id: docTypes.length + 1, ...newType, status: 'Activo', format: `${newType.code}-12021001-0001`, hasTemplate: !!newType.template, fields: assignedFields }]); 
-                    setIsCreating(false); setNewType({ name: '', code: '', template: null }); resetFields(); 
-                } 
-            };
-
-            // Handlers de edición
-            const handleEditClick = (type) => {
-                setEditType({ ...type });
-                // Cargar campos asignados del tipo seleccionado
-                const assigned = type.fields || [];
-                setAssignedFields(assigned);
-                // Calcular disponibles (Todos - Asignados)
-                const assignedIds = assigned.map(f => f.id);
-                setAvailableFields(allSystemFields.filter(f => !assignedIds.includes(f.id)));
-            };
-
-            const handleUpdate = () => {
-                if (editType && editType.name && editType.code) {
-                    setDocTypes(docTypes.map(t => t.id === editType.id ? { 
-                        ...editType, 
-                        format: `${editType.code}-12021001-0001`,
-                        hasTemplate: !!editType.template || t.hasTemplate,
-                        fields: assignedFields // Guardar los campos actualizados
-                    } : t));
-                    setEditType(null);
-                    setAssignedFields([]); // Limpiar al cerrar
-                    setAvailableFields([]);
-                }
-            };
-
-            const handleDeleteConfirm = () => {
-                if (deleteType) {
-                    setDocTypes(docTypes.filter(t => t.id !== deleteType.id));
-                    setDeleteType(null);
-                }
-            };
-
-            // Mock de historial de auditoría
-            const auditHistory = [
-                { date: '2025-10-15 09:30', user: 'admin@gob.py', action: 'Creación del Tipo' },
-                { date: '2026-01-20 14:15', user: 'cgonzalez', action: 'Modificación de Formato' },
-                { date: '2026-02-02 10:05', user: 'sysadmin', action: 'Actualización de Plantilla' },
-            ];
-
-            return (
-                <div className="space-y-6 animate-fadeIn relative">
-                    <div className="flex justify-between items-center">
-                        <div><h2 className="text-2xl font-bold text-slate-800">Administración de Tipos</h2><p className="text-slate-500">Gestión de metadatos y definiciones.</p></div>
-                        {!isCreating && <Button onClick={() => { setIsCreating(true); resetFields(); }}><Icons.PlusCircle size={20} /> Crear Tipo</Button>}
-                    </div>
-
-                    {isCreating ? (
-                        <Card className="max-w-4xl mx-auto">
-                            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4"><h3 className="text-xl font-bold text-slate-800">Nuevo Tipo Documental</h3><button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24} /></button></div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                <div className="space-y-6">
-                                    <div><label className="block text-sm font-semibold text-slate-700 mb-2">Nombre del Tipo</label><input type="text" value={newType.name} onChange={(e) => { const name = e.target.value; setNewType({ ...newType, name: name, code: name.slice(0, 3).toUpperCase() }) }} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Ej. Resolución" /></div>
-                                    <div><label className="block text-sm font-semibold text-slate-700 mb-2">Código</label><input type="text" value={newType.code} onChange={(e) => setNewType({...newType, code: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-slate-50 font-mono" /><p className="text-xs text-slate-400 mt-2 font-mono">Formato: {newType.code ? `${newType.code}-12021001-0001` : 'CODIGO-...'}</p></div>
-                                    <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:bg-slate-50 transition cursor-pointer" onClick={() => document.getElementById('template-upload').click()}><input id="template-upload" type="file" className="hidden" accept=".docx" onChange={(e) => { if (e.target.files?.[0]) setNewType({...newType, template: e.target.files[0].name}); }} /><div className="bg-brand-50 w-12 h-12 rounded-full flex items-center justify-center text-brand-600 mx-auto mb-3"><Icons.Upload size={24}/></div><p className="font-medium text-slate-700">{newType.template || "Subir Plantilla Base (.docx)"}</p></div>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-semibold text-slate-700">Asignación de Campos</label>
-                                    <div className="flex gap-4 h-80">
-                                        <div className="flex-1 border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50"><div className="bg-slate-100 p-2 text-xs font-bold text-slate-500 text-center uppercase tracking-wider">Disponibles</div><div className="p-2 space-y-1 overflow-y-auto">{availableFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toRight')} className="p-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300 hover:text-brand-600 hover:shadow-sm transition-all flex justify-between items-center group"><span>{field.label}</span><Icons.ArrowRight size={14} className="text-slate-300 group-hover:text-brand-500"/></div>))}</div></div>
-                                        <div className="flex-1 border border-brand-200 rounded-xl overflow-hidden flex flex-col bg-brand-50/30"><div className="bg-brand-100 p-2 text-xs font-bold text-brand-700 text-center uppercase tracking-wider">Asignados</div><div className="p-2 space-y-1 overflow-y-auto">{assignedFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toLeft')} className="p-2 bg-white border border-brand-200 rounded-lg text-sm font-medium text-brand-800 cursor-pointer hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all flex justify-between items-center group"><Icons.ArrowLeft size={14} className="text-brand-300 group-hover:text-red-400"/><span>{field.label}</span></div>))}</div></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3"><Button variant="ghost" onClick={() => setIsCreating(false)}>Cancelar</Button><Button variant="primary" onClick={handleSave} disabled={!newType.name}><Icons.Save size={18}/> Guardar Tipo</Button></div>
-                        </Card>
-                    ) : (
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                             <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-6 py-4">Nombre</th>
-                                        <th className="px-6 py-4">Código</th>
-                                        {/* Columna Formato eliminada */}
-                                        <th className="px-6 py-4">Estado</th>
-                                        <th className="px-6 py-4 text-right">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">{docTypes.map(t => (
-                                 <tr key={t.id} className="hover:bg-slate-50 transition-colors">
-                                     <td className="px-6 py-4 font-medium text-slate-800">{t.name}</td>
-                                     <td className="px-6 py-4 font-mono text-sm text-slate-600">{t.code}</td>
-                                     {/* Celda Formato eliminada */}
-                                     <td className="px-6 py-4"><Badge status={t.status} /></td>
-                                     <td className="px-6 py-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => setViewType(t)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg"><Icons.Eye size={18} /></button><button onClick={() => handleEditClick(t)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><Icons.Edit size={18} /></button><button onClick={() => setDeleteType(t)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Icons.Trash size={18} /></button></div></td>
-                                 </tr>))}
-                             </tbody></table>
-                        </div>
-                    )}
-                    
-                    {/* Modal Visualizar Admin (Updated) */}
-                    {viewType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"><Card className="w-[600px] animate-scaleIn">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6"><h3 className="font-bold text-xl text-slate-800">{viewType.name}</h3><button onClick={() => setViewType(null)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24}/></button></div>
-                        <div className="grid grid-cols-2 gap-6 mb-6">
-                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Código</p><p className="font-mono text-slate-700 bg-slate-50 p-2 rounded">{viewType.code}</p></div>
-                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Formato</p><p className="font-mono text-slate-700 bg-slate-50 p-2 rounded">{viewType.format}</p></div>
-                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</p><Badge status={viewType.status} /></div>
-                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Plantilla</p><div className="flex items-center gap-2 text-sm text-slate-700">{viewType.hasTemplate ? <><Icons.Paperclip size={16} className="text-brand-500"/> Asignada</> : <span className="text-slate-400 italic">No asignada</span>}</div></div>
-                        </div>
-                        <div className="mb-6">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Campos Asociados</p>
-                            <div className="flex flex-wrap gap-2">
-                                {viewType.fields && viewType.fields.length > 0 ? viewType.fields.map(f => (<span key={f.id} className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full border border-brand-100">{f.label}</span>)) : <span className="text-sm text-slate-400 italic">Sin campos específicos</span>}
-                            </div>
-                        </div>
-                        
-                        {/* Historial de Auditoría */}
-                        <div>
-                            <h4 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-3 flex items-center gap-2"><Icons.History size={14}/> Historial de Auditoría</h4>
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                <table className="w-full text-left text-xs">
-                                    <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
-                                            <tr>
-                                                <th className="px-4 py-2">Fecha</th>
-                                                <th className="px-4 py-2">Usuario</th>
-                                                <th className="px-4 py-2">Acción</th>
-                                            </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {auditHistory.map((audit, i) => (
-                                            <tr key={i} className="hover:bg-slate-50">
-                                                <td className="px-4 py-2 text-slate-600">{audit.date}</td>
-                                                <td className="px-4 py-2 text-slate-800 font-medium">{audit.user}</td>
-                                                <td className="px-4 py-2 text-slate-600">{audit.action}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end"><Button variant="secondary" onClick={() => setViewType(null)}>Cerrar</Button></div>
-                    </Card></div>}
-
-                    {/* Modal Editar Admin (Updated with Logic) */}
-                    {editType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"><Card className="w-[800px] animate-scaleIn max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6"><h3 className="font-bold text-xl text-slate-800">Editar Tipo Documental</h3><button onClick={() => setEditType(null)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24}/></button></div>
-                        <div className="grid grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Nombre</label><input type="text" value={editType.name} onChange={(e) => setEditType({...editType, name: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3" /></div>
-                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Código</label><input type="text" value={editType.code} onChange={(e) => setEditType({...editType, code: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-slate-50 font-mono" /></div>
-                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Estado</label><select value={editType.status} onChange={(e) => setEditType({...editType, status: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
-                                <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:bg-slate-50 cursor-pointer flex items-center justify-center gap-3"><div className="bg-brand-50 p-2 rounded-full text-brand-600"><Icons.Upload size={20}/></div><span className="text-sm font-medium text-slate-600">Actualizar Plantilla</span></div>
-                            </div>
-                            <div className="space-y-3">
-                                <label className="block text-sm font-semibold text-slate-700">Editar Asignación de Campos</label>
-                                <div className="flex gap-4 h-64">
-                                    <div className="flex-1 border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50"><div className="bg-slate-100 p-2 text-xs font-bold text-slate-500 text-center uppercase">Disponibles</div><div className="p-2 space-y-1 overflow-y-auto">{availableFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toRight')} className="p-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300 hover:text-brand-600 flex justify-between items-center"><span>{field.label}</span><Icons.ArrowRight size={14}/></div>))}</div></div>
-                                    <div className="flex-1 border border-brand-200 rounded-xl overflow-hidden flex flex-col bg-brand-50/30"><div className="bg-brand-100 p-2 text-xs font-bold text-brand-700 text-center uppercase">Asignados</div><div className="p-2 space-y-1 overflow-y-auto">{assignedFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toLeft')} className="p-2 bg-white border border-brand-200 rounded-lg text-sm font-medium text-brand-800 cursor-pointer hover:bg-red-50 hover:text-red-600 flex justify-between items-center"><Icons.ArrowLeft size={14}/><span>{field.label}</span></div>))}</div></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3"><Button variant="ghost" onClick={() => setEditType(null)}>Cancelar</Button><Button variant="primary" onClick={handleUpdate}><Icons.Save size={18}/> Guardar Cambios</Button></div>
-                    </Card></div>}
-
-                    {deleteType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50"><Card className="w-96 text-center animate-scaleIn"><div className="mx-auto bg-red-100 w-16 h-16 rounded-full flex items-center justify-center text-red-600 mb-4"><Icons.AlertTriangle size={32}/></div><h3 className="font-bold text-lg">¿Eliminar {deleteType.name}?</h3><div className="mt-6 flex justify-center gap-2"><Button variant="ghost" onClick={() => setDeleteType(null)}>Cancelar</Button><Button variant="danger" onClick={handleDeleteConfirm}>Eliminar</Button></div></Card></div>}
-                </div>
-            );
-        };
-
         const CreateDocumentView = ({ setActiveTab, documents, setDocuments }) => {
             const [step, setStep] = useState(1);
             const [creationMode, setCreationMode] = useState('word');
@@ -799,10 +540,13 @@
             const [digitaliaSearch, setDigitaliaSearch] = useState('');
             const [selectedDigitaliaExp, setSelectedDigitaliaExp] = useState(null);
             const [digitaliaSearchResults, setDigitaliaSearchResults] = useState([]);
-            const [formData, setFormData] = useState({ title: '', date: new Date().toISOString().split('T')[0], responsible: 'Cynthia Gonzalez', visibility: 'Público', content: 'Se procede a la firma...' });
+            const [formData, setFormData] = useState({ title: '', date: new Date().toISOString().split('T')[0], responsible: 'Cynthia Gonzalez', visibility: 'Público', designatedUsers: [], content: 'Se procede a la firma...' });
             
-            // Estado para guardar el ID generado
             const [generatedId, setGeneratedId] = useState('');
+            const [availableUsers] = useState(['Rodrigo Antola', 'Juan Perez', 'Maria Lopez', 'Admin Sistema', 'Carlos Ruiz']);
+            const [selectedUserToAdd, setSelectedUserToAdd] = useState('');
+            const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+            const [userSearchTerm, setUserSearchTerm] = useState('');
 
             const handleDownloadTemplate = (e, type) => {
                 e.stopPropagation();
@@ -825,22 +569,15 @@
             
             const handleSaveRepository = () => { 
                 setIsSaved(true);
-                
-                // LÓGICA DE GENERACIÓN DE ID: AAA-AÑO-000N
                 const type = selectedTemplate || 'Documento';
-                // 1. Obtener prefijo (3 primeras letras en mayúscula)
                 const prefix = type.substring(0, 3).toUpperCase();
-                // 2. Obtener año actual
                 const year = new Date().getFullYear();
-                
-                // 3. Calcular secuencial buscando en los documentos existentes
                 let maxSeq = 0;
                 const patternPrefix = `${prefix}-${year}-`;
                 
                 documents.forEach(doc => {
                     if (doc.id.startsWith(patternPrefix)) {
                         const parts = doc.id.split('-');
-                        // Asumimos formato PREFIX-YEAR-SEQ (parts[2] es el secuencial)
                         if (parts.length === 3) {
                             const seq = parseInt(parts[2], 10);
                             if (!isNaN(seq) && seq > maxSeq) {
@@ -853,13 +590,13 @@
                 const nextSeq = (maxSeq + 1).toString().padStart(4, '0');
                 const newId = `${prefix}-${year}-${nextSeq}`;
                 
-                setGeneratedId(newId); // Guardamos para mostrar en paso 4
+                setGeneratedId(newId);
 
                 setDocuments(prev => [{ 
                     id: newId, 
                     title: creationMode === 'form' ? formData.title : `${selectedTemplate} N° ${year}/${nextSeq}`, 
                     type: selectedTemplate || 'Documento', 
-                    keyword: 'General', // Default keyword
+                    keyword: 'General',
                     author: formData.responsible, 
                     date: formData.date, 
                     institution: 'Ministerio de Tecnologías', 
@@ -892,12 +629,9 @@
             
             const handleSaveRelations = () => { 
                 setShowDigitaliaModal(false); 
-                // Actualizamos el documento recién guardado con el ID de Digitalia (simulado para el primero de la lista)
                 if (relatedTramites.length > 0) {
                      setDocuments(prev => {
                         const newDocs = [...prev];
-                        // Buscamos el documento por el ID que acabamos de generar
-                        // Como acabamos de insertar al principio, suele ser el índice 0, pero por seguridad buscamos por ID
                         const targetIndex = newDocs.findIndex(d => d.id === generatedId);
                         if (targetIndex !== -1) {
                             newDocs[targetIndex].digitaliaId = relatedTramites[0].id; 
@@ -905,7 +639,7 @@
                         return newDocs;
                      });
                 }
-                setStep(4); // Ir a resumen final
+                setStep(4);
             };
 
             return (
@@ -957,16 +691,150 @@
                         {step === 2 && (
                              <Card className="animate-fadeIn">
                                 <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4"><h3 className="text-lg font-bold text-slate-800">2. {creationMode === 'word' ? 'Carga de Archivo' : 'Completar Datos Requeridos'}</h3><span className="text-xs font-semibold bg-slate-100 text-slate-600 px-3 py-1 rounded-full uppercase tracking-wider">{creationMode === 'word' ? 'Modo Offline' : 'Modo Online'}</span></div>
-                                {creationMode === 'word' ? (
-                                    <div className="text-center py-10"><p className="text-slate-600 mb-6">Suba el archivo <strong>{selectedTemplate}.docx</strong> editado.</p><div className="border-2 border-dashed border-brand-200 bg-brand-50/30 rounded-2xl p-16 hover:bg-brand-50 transition cursor-pointer group" onClick={handleUpload}>{uploading ? <div className="animate-pulse"><div className="w-16 h-16 bg-brand-200 rounded-full mx-auto mb-4"></div><p className="text-brand-700 font-medium">Procesando documento...</p></div> : <div><div className="mx-auto bg-white w-20 h-20 rounded-full flex items-center justify-center text-brand-600 mb-4 shadow-sm group-hover:scale-110 transition-transform"><Icons.Upload size={40}/></div><p className="text-slate-800 font-medium text-lg">Haga clic para subir</p></div>}</div></div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-3 gap-6"><div className="col-span-2"><label className="block text-sm font-semibold text-slate-700 mb-2">Título del Documento</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/></div><div><label className="block text-sm font-semibold text-slate-700 mb-2">Fecha</label><input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/></div></div>
-                                        <div className="grid grid-cols-2 gap-6"><div><label className="block text-sm font-semibold text-slate-700 mb-2">Responsable</label><input type="text" value={formData.responsible} onChange={e => setFormData({...formData, responsible: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/></div><div><label className="block text-sm font-semibold text-slate-700 mb-2">Visibilidad</label><select value={formData.visibility} onChange={e => setFormData({...formData, visibility: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none"><option>Público</option><option>Privado</option></select></div></div>
-                                        <div><label className="block text-sm font-semibold text-slate-700 mb-2">Cuerpo del Documento</label><textarea rows={8} value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"></textarea></div>
-                                        <div className="flex justify-end"><Button onClick={handleFormSubmit}>Generar Vista Previa</Button></div>
+                                
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-6 items-start">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Visibilidad</label>
+                                            <select value={formData.visibility} onChange={e => setFormData({...formData, visibility: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                                                <option>Público</option>
+                                                <option>Privado</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Fecha</label>
+                                            <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/>
+                                        </div>
                                     </div>
-                                )}
+                                    
+                                    {formData.visibility === 'Privado' && (
+                                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 animate-fadeIn shadow-inner relative">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2"><Icons.Shield size={16} className="text-slate-500"/> Compartir solo con usuarios específicos</label>
+                                            <div className="flex gap-2 mb-3 relative">
+                                                
+                                                {/* Dropdown Customizado con Buscador */}
+                                                <div className="relative flex-1">
+                                                    <div
+                                                        className={`w-full border ${isUserDropdownOpen ? 'border-brand-500 ring-2 ring-brand-500/20' : 'border-slate-300'} rounded-xl px-4 py-2.5 bg-white cursor-pointer flex justify-between items-center text-sm transition-all h-full`}
+                                                        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                                                    >
+                                                        <span className={selectedUserToAdd ? "text-slate-900 font-medium" : "text-slate-500"}>
+                                                            {selectedUserToAdd || "Seleccione un usuario para dar acceso..."}
+                                                        </span>
+                                                        <Icons.ChevronDown size={16} className={`text-slate-400 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+                                                    </div>
+
+                                                    {isUserDropdownOpen && (
+                                                        <>
+                                                            <div className="fixed inset-0 z-10" onClick={() => setIsUserDropdownOpen(false)}></div>
+                                                            <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-scaleIn origin-top">
+                                                                <div className="p-3 border-b border-slate-100 bg-slate-50">
+                                                                    <div className="relative">
+                                                                        <Icons.Search size={14} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                                                                        <input
+                                                                            type="text"
+                                                                            autoFocus
+                                                                            placeholder="Buscar usuario..."
+                                                                            value={userSearchTerm}
+                                                                            onChange={(e) => setUserSearchTerm(e.target.value)}
+                                                                            className="w-full pl-8 pr-3 py-2 text-sm border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all bg-white"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="max-h-48 overflow-y-auto py-1">
+                                                                    {availableUsers
+                                                                        .filter(u => !formData.designatedUsers.includes(u))
+                                                                        .filter(u => u.toLowerCase().includes(userSearchTerm.toLowerCase()))
+                                                                        .length > 0 ? (
+                                                                        availableUsers
+                                                                            .filter(u => !formData.designatedUsers.includes(u))
+                                                                            .filter(u => u.toLowerCase().includes(userSearchTerm.toLowerCase()))
+                                                                            .map(u => (
+                                                                                <div
+                                                                                    key={u}
+                                                                                    className="px-4 py-2.5 text-sm text-slate-700 hover:bg-brand-50 hover:text-brand-700 cursor-pointer flex items-center gap-2 transition-colors"
+                                                                                    onClick={() => {
+                                                                                        setSelectedUserToAdd(u);
+                                                                                        setIsUserDropdownOpen(false);
+                                                                                        setUserSearchTerm('');
+                                                                                    }}
+                                                                                >
+                                                                                    <Icons.User size={14} className="text-slate-400" /> {u}
+                                                                                </div>
+                                                                            ))
+                                                                    ) : (
+                                                                        <div className="px-4 py-4 text-sm text-slate-500 italic text-center">No se encontraron resultados</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (selectedUserToAdd && !formData.designatedUsers.includes(selectedUserToAdd)) {
+                                                            setFormData({...formData, designatedUsers: [...formData.designatedUsers, selectedUserToAdd]});
+                                                            setSelectedUserToAdd('');
+                                                            setUserSearchTerm('');
+                                                        }
+                                                    }}
+                                                    disabled={!selectedUserToAdd}
+                                                    className="bg-brand-100 text-brand-700 px-5 py-2.5 rounded-xl font-medium hover:bg-brand-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-1"
+                                                >
+                                                    <Icons.Plus size={16}/> Agregar
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="min-h-[40px] border border-dashed border-slate-300 rounded-lg p-2 bg-white flex flex-wrap gap-2 items-center relative z-0">
+                                                {formData.designatedUsers.length > 0 ? (
+                                                    formData.designatedUsers.map(u => (
+                                                        <span key={u} className="bg-brand-50 border border-brand-200 text-brand-800 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-sm transition-all">
+                                                            <Icons.User size={12} className="opacity-50"/> {u}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setFormData({...formData, designatedUsers: formData.designatedUsers.filter(user => user !== u)})}
+                                                                className="text-brand-400 hover:text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors"
+                                                            >
+                                                                <Icons.X size={14} />
+                                                            </button>
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-xs text-slate-400 italic px-2 w-full text-center">Si no selecciona usuarios, el documento será estrictamente personal.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {creationMode === 'form' ? (
+                                        <>
+                                            <div className="grid grid-cols-3 gap-6"><div className="col-span-2"><label className="block text-sm font-semibold text-slate-700 mb-2">Título del Documento</label><input type="text" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/></div><div><label className="block text-sm font-semibold text-slate-700 mb-2">Responsable</label><input type="text" value={formData.responsible} onChange={e => setFormData({...formData, responsible: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/></div></div>
+                                            <div><label className="block text-sm font-semibold text-slate-700 mb-2">Cuerpo del Documento</label><textarea rows={8} value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"></textarea></div>
+                                            <div className="flex justify-end"><Button onClick={handleFormSubmit}>Generar Vista Previa</Button></div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center pt-6 border-t border-slate-100">
+                                            <p className="text-slate-600 mb-6">Suba el archivo <strong>{selectedTemplate}.docx</strong> editado.</p>
+                                            <div className="border-2 border-dashed border-brand-200 bg-brand-50/30 rounded-2xl p-12 hover:bg-brand-50 transition cursor-pointer group" onClick={handleUpload}>
+                                                {uploading ? (
+                                                    <div className="animate-pulse">
+                                                        <div className="w-16 h-16 bg-brand-200 rounded-full mx-auto mb-4"></div>
+                                                        <p className="text-brand-700 font-medium">Procesando documento...</p>
+                                                    </div>
+                                                ) : (
+                                                    <div>
+                                                        <div className="mx-auto bg-white w-20 h-20 rounded-full flex items-center justify-center text-brand-600 mb-4 shadow-sm group-hover:scale-110 transition-transform">
+                                                            <Icons.Upload size={40}/>
+                                                        </div>
+                                                        <p className="text-slate-800 font-medium text-lg">Haga clic para subir</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                                 {creationMode === 'word' && <div className="flex justify-start mt-6"><Button variant="ghost" onClick={() => setStep(1)}>← Volver</Button></div>}
                              </Card>
                         )}
@@ -979,7 +847,6 @@
                                          {/* Vista Previa Mejorada - Estilo Certificado/Informe */}
                                          <div className="bg-white shadow-2xl p-12 w-full max-w-[650px] min-h-[800px] text-slate-900 relative font-sans flex flex-col">
                                              
-                                            {/* Header Institucional */}
                                             <div className="flex justify-between items-center mb-2">
                                                 <div className="w-20 flex flex-col items-center justify-center">
                                                     <div className="w-14 h-14 rounded-full border-2 border-slate-800 flex items-center justify-center p-1">
@@ -993,7 +860,6 @@
                                                     <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">Sistema de Gestión Documental Unificado</p>
                                                 </div>
                                                 <div className="w-20 flex justify-center">
-                                                     {/* Logo Placeholder Derecho */}
                                                      <div className="flex items-end space-x-1 opacity-80">
                                                         <div className="w-2 h-6 bg-red-600 rounded-t-sm"></div>
                                                         <div className="w-2 h-8 bg-slate-200 border border-slate-300 rounded-t-sm"></div>
@@ -1002,11 +868,9 @@
                                                 </div>
                                             </div>
 
-                                            {/* Línea Separadora Header */}
                                             <div className="border-b-4 border-slate-900 mb-1"></div>
                                             <div className="border-b border-slate-400 mb-6"></div>
 
-                                            {/* Título del Documento */}
                                             <div className="text-center mb-6">
                                                 <h2 className="text-xl font-bold text-slate-900 mb-1">{creationMode === 'form' ? formData.title : `${selectedTemplate || 'INFORME DE GESTIÓN'} - ÁREA ADMINISTRATIVA`}</h2>
                                                 <div className="flex justify-end">
@@ -1015,13 +879,11 @@
                                                 <div className="border-b border-slate-800 mt-1"></div>
                                             </div>
 
-                                            {/* Sujeto / Responsable */}
                                             <div className="text-center mb-8 py-4 bg-slate-50/50">
                                                 <h3 className="text-2xl font-bold uppercase text-slate-900 tracking-wide mb-2">{formData.responsible.toUpperCase()}</h3>
                                                 <p className="text-sm font-medium text-slate-600">Con Documento de Identidad N°: 3.998.588</p>
                                             </div>
 
-                                            {/* Cuerpo del Texto */}
                                             <div className="mb-8 px-6 text-center flex-1">
                                                 <p className="text-sm font-semibold uppercase leading-7 tracking-wide text-slate-800">
                                                     {creationMode === 'form' 
@@ -1033,15 +895,12 @@
                                                 </p>
                                             </div>
 
-                                            {/* Disclaimer Legal / Ubicaciones (Parte Blanca) */}
                                             <div className="border-t border-slate-400 mb-3"></div>
                                             <div className="text-[10px] text-justify text-slate-600 font-medium uppercase leading-relaxed mb-6 px-2">
                                                 VÁLIDO EN TODO EL TERRITORIO NACIONAL - ASUNCIÓN - CONCEPCIÓN - SAN PEDRO - CORDILLERA - GUAIRÁ - CAAGUAZÚ - CAAZAPÁ - ITAPÚA - MISIONES - PARAGUARÍ - ALTO PARANÁ - CENTRAL - ÑEEMBUCÚ - AMAMBAY - CANINDEYÚ - PRESIDENTE HAYES - BOQUERÓN - ALTO PARAGUAY.
                                             </div>
 
-                                            {/* Footer Integrado (Parte Gris) */}
                                             <div className="bg-slate-100 -mx-12 -mb-12 p-8 border-t border-slate-300 mt-auto rounded-b-sm">
-                                                {/* Fila 1: Fecha */}
                                                 <div className="mb-6">
                                                     <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                                                         Fecha de Emisión: <span className="font-mono font-medium text-slate-700">{formData.date} 15:28:04</span>
@@ -1049,7 +908,6 @@
                                                 </div>
 
                                                 <div className="flex justify-between items-start">
-                                                    {/* Columna Izquierda: Código y QR */}
                                                     <div className="flex flex-col gap-2">
                                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Código de Verificación:</p>
                                                         <div className="bg-white p-1 border-2 border-slate-800 w-fit rounded-sm">
@@ -1058,7 +916,6 @@
                                                         <p className="text-lg font-bold text-slate-900 tracking-widest font-mono">45549046</p>
                                                     </div>
 
-                                                    {/* Columna Derecha: Autoridad */}
                                                     <div className="text-right pt-2">
                                                         <p className="text-xs font-bold text-slate-800 leading-relaxed">
                                                             Gobierno Nacional a través del<br/>
@@ -1070,7 +927,6 @@
                                                     </div>
                                                 </div>
 
-                                                {/* Link de Verificación */}
                                                 <div className="mt-8 pt-4 border-t border-slate-200 text-center">
                                                     <p className="text-[10px] text-slate-500 font-medium">
                                                         Verifique la validez de este documento en
@@ -1089,7 +945,6 @@
                                                  <button onClick={handleSaveRepository} disabled={isSaved} className={`w-full py-4 rounded-xl flex flex-col items-center justify-center gap-2 border transition-all ${isSaved ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white hover:bg-brand-50 text-brand-700 border-brand-200 hover:border-brand-300 shadow-sm'}`}>{isSaved ? <Icons.CheckCircle size={24}/> : <Icons.FileCheck size={24}/>}<span className="font-semibold">{isSaved ? 'Guardado en Repositorio' : '1. Guardar en Repositorio'}</span></button>
                                                  <div className={`relative transition-opacity duration-300 ${!isSaved ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}><button onClick={() => setShowDigitaliaModal(true)} className="w-full py-4 rounded-xl flex flex-col items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 transition-all transform hover:-translate-y-0.5"><Icons.LinkIcon size={24}/><span className="font-semibold">2. Relacionar a Digitalia</span></button>{!isSaved && <div className="absolute inset-0 z-10 cursor-not-allowed"></div>}</div>
                                                  
-                                                 {/* Botón Descargar agregado */}
                                                  <div className={`relative transition-opacity duration-300 ${!isSaved ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                                                      <button onClick={() => alert("Iniciando descarga del documento firmado...")} className="w-full py-4 rounded-xl flex flex-col items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 shadow-sm transition-all transform hover:-translate-y-0.5">
                                                          <Icons.Download size={24}/>
@@ -1097,7 +952,6 @@
                                                      </button>
                                                  </div>
 
-                                                 {/* Botón Finalizar Proceso agregado */}
                                                  <div className={`relative transition-opacity duration-300 ${!isSaved ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                                                      <button 
                                                          onClick={() => { setActiveTab('repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} 
@@ -1243,7 +1097,6 @@
                                 <div><p className="text-xs text-slate-500 uppercase font-semibold mb-1">Total Documentos</p><p className="text-2xl font-bold text-slate-800">{selectedDocs.length}</p></div>
                             </div>
                             
-                            {/* Lista de Documentos Vinculados (Agregada) */}
                             <div>
                                 <p className="text-xs text-slate-500 uppercase font-semibold mb-2">Documentos Vinculados</p>
                                 <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
@@ -1283,7 +1136,7 @@
                                 ) : (
                                     <div className="flex-1 flex flex-col animate-fadeIn border-t border-slate-200 pt-6">
                                         <div className="mb-6 bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex justify-between items-center animate-fadeIn"><div className="flex items-center space-x-3"><div className="bg-indigo-100 p-2 rounded-full text-indigo-700"><Icons.FolderOpen size={24} /></div><div><p className="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Expediente Destino</p><p className="font-bold text-lg text-indigo-900">{selectedExpediente.id}</p><p className="text-sm text-indigo-800">{selectedExpediente.title}</p></div></div><button onClick={handleClearExpediente} className="text-slate-400 hover:text-red-500 p-2 hover:bg-white rounded-full transition-colors" title="Cambiar Expediente"><Icons.X size={20} /></button></div>
-                                        <div className="flex justify-between items-center mb-3"><label className="block text-sm font-medium text-slate-700">2. Seleccione Documentos a Vincular</label><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{selectedDocs.length} seleccionados</span></div>
+                                        <div className="flex justify-between items-center mb-3"><label className="block text-sm font-medium text-slate-700">2. Seleccione Documentos a Vincular</label><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">{selectedDocs.length} selected</span></div>
                                         <div className="mb-3 relative"><Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} /><input type="text" placeholder="Filtrar documentos por nombre o ID..." className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 focus:outline-none" value={docSearchTerm} onChange={(e) => setDocSearchTerm(e.target.value)} /></div>
                                         <div className="border border-slate-200 rounded-lg flex-1 overflow-y-auto max-h-64"><div className="divide-y divide-slate-100">{filteredDocs.map(doc => { const isSelected = selectedDocs.includes(doc.id); return (<div key={doc.id} onClick={() => toggleDocSelection(doc.id)} className={`px-4 py-3 flex items-center space-x-4 cursor-pointer transition-colors ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'}`}><div className={`text-slate-400 ${isSelected ? 'text-blue-600' : ''}`}>{isSelected ? <Icons.CheckSquare size={20} /> : <Icons.Square size={20} />}</div><div className="flex-1"><p className={`font-medium text-sm ${isSelected ? 'text-blue-900' : 'text-slate-700'}`}>{doc.title}</p><div className="flex items-center space-x-2 text-xs text-slate-500 mt-0.5"><span>{doc.id}</span><span>•</span><span>{doc.date}</span></div></div>{isSelected && <span className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded border border-blue-200">Vincular</span>}</div>); })}</div></div>
                                         <div className="mt-6 flex justify-end items-center space-x-4 pt-4 border-t border-slate-100"><button onClick={handleClearExpediente} className="text-slate-600 hover:text-slate-800 text-sm font-medium">Cancelar</button><button onClick={handleConfirmLink} disabled={selectedDocs.length === 0} className={`px-6 py-2 rounded-lg text-white font-medium flex items-center space-x-2 transition-colors ${selectedDocs.length === 0 ? 'bg-slate-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-md'}`}><Icons.LinkIcon size={18} /><span>Confirmar Vinculación ({selectedDocs.length})</span></button></div>
@@ -1297,6 +1150,503 @@
             );
         };
 
+        const ValidateDocumentView = () => {
+            const [code, setCode] = useState('');
+            const [constancia, setConstancia] = useState('');
+            const [validationResult, setValidationResult] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            const generatePDF = () => {
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const pageWidth = doc.internal.pageSize.getWidth();
+                    
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(14);
+                    doc.setTextColor(255, 204, 0);
+                    doc.text("★", 15, 22);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text("GOBIERNO DEL\nPARAGUAY", 25, 20);
+                    
+                    doc.setTextColor(30, 58, 138);
+                    doc.setFontSize(14);
+                    doc.text("Ministerio de Salud Pública y\nBienestar Social", 105, 20, { align: "center" });
+                    
+                    doc.setFontSize(9);
+                    const topUrl = "https://www.mspbs.gov.py";
+                    doc.text(topUrl, 105, 30, { align: "center" });
+                    const topUrlWidth = doc.getTextWidth(topUrl);
+                    doc.link(105 - (topUrlWidth / 2), 27, topUrlWidth, 4, { url: topUrl });
+                    
+                    doc.setTextColor(0, 0, 0);
+                    
+                    doc.setFontSize(9);
+                    doc.text("Constancia Nro.", 195, 15, { align: "right" });
+                    doc.setFont("helvetica", "bold");
+                    doc.text(constancia, 195, 19, { align: "right" });
+                    
+                    doc.setFillColor(0, 0, 0);
+                    let bx = 160;
+                    for(let i=0; i<22; i++){
+                        let w = Math.random() > 0.5 ? 0.6 : 1.5;
+                        doc.rect(bx, 21, w, 8, 'F');
+                        bx += w + 0.6;
+                    }
+                    
+                    doc.setFont("helvetica", "bold");
+                    doc.text(constancia, 195, 33, { align: "right" });
+
+                    doc.setLineWidth(0.3);
+                    doc.line(15, 38, 195, 38);
+
+                    doc.setFontSize(16);
+                    doc.text("Certificado Electrónico Internacional de Vacunación", 105, 48, { align: "center" });
+
+                    doc.line(15, 52, 195, 52);
+
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Nombre y Apellido:", 15, 62);
+                    doc.text("Cédula:", 15, 68);
+                    doc.text("Fecha de Nacimiento:", 15, 74);
+                    doc.text("Nacionalidad:", 15, 80);
+
+                    doc.setFont("helvetica", "normal");
+                    doc.text("FERNANDO MANUEL MANCIA ZELAYA", 65, 62);
+                    doc.text("3298639", 65, 68);
+                    doc.text("23/10/1984", 65, 74);
+                    doc.text("PARAGUAYA", 65, 80);
+
+                    if (doc.autoTable) {
+                        doc.autoTable({
+                            startY: 85,
+                            theme: 'grid',
+                            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.2, halign: 'center' },
+                            bodyStyles: { lineColor: 0, lineWidth: 0.2, halign: 'center', textColor: 0 },
+                            head: [['Código de Lote', 'Código Vacuna', 'Dosis', 'Establecimiento de Salud', 'Fecha de\nVacunación']],
+                            body: [['18PDFA105', 'Fiebre Amarilla', 'Dosis Unica', 'H.M.I SAN LORENZO', '13/01/2020']]
+                        });
+
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9);
+                        const text1 = "Este certificado solo será válido si la vacuna fue aprobada por la Organización Mundial de la Salud y el centro de vacunación acreditado por la administración sanitaria del territorio donde se utilice. Debido a que 1 dosis de la vacuna contra la Fiebre Amarilla (FA) genera inmunidad de por vida, la validez de este certificado es de por vida comenzando 10 días después de la inoculación de la vacuna. Cualquier alteración, borroneado u omisión en este certificado afectará su validez.";
+                        doc.text(text1, 15, doc.lastAutoTable.finalY + 8, { maxWidth: 180, align: "justify" });
+
+                        let currentY = doc.lastAutoTable.finalY + 30;
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(11);
+                        doc.text("Otras vacunas (última dosis): Poliomielitis, Sarampión/Rubeola", 15, currentY);
+
+                        doc.autoTable({
+                            startY: currentY + 3,
+                            theme: 'grid',
+                            headStyles: { fillColor: [255, 255, 255], textColor: 0, fontStyle: 'bold', lineColor: 0, lineWidth: 0.2, halign: 'center' },
+                            bodyStyles: { lineColor: 0, lineWidth: 0.2, halign: 'center', textColor: 0 },
+                            head: [['Código de Lote', 'Código Vacuna', 'Dosis', 'Establecimiento de Salud', 'Fecha de\nVacunación']],
+                            body: [['0098N012', 'Sarampion', '1ª Dosis', 'H.M.I SAN LORENZO', '13/01/2020']]
+                        });
+
+                        currentY = doc.lastAutoTable.finalY + 8;
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9);
+                        doc.text("Aprobado según Resolución MSPBS N° 652/2023", 15, currentY);
+                        currentY += 8;
+                        
+                        const text2 = "Articulo 2. Establecer que los documentos \"Certificado Electrónico Internacional de Vacunación\" y \"Certificado Electrónico de Vacunación\" emitido por el portal de gobierno tienen validez en todo el territorio nacional, ante organismos nacionales e internacionales, sean entes públicos y/o privados, ante La cual se deba comprobar el estado de vacunación del titular de esta.\n\nLos datos aquí expuestos provienen del Registro Nominal de Vacunación Electrónico del MSPyBS, a través del Sistema de Intercambio de Información del Estado (SII), por lo que su contenido e integridad es exclusiva responsabilidad de este.\n\nConforme a lo dispuesto en los Artículos 13 y 14 del Decreto N° 8709/2018, toda información y documentos obtenidos mediante el Servicio del Portal Único de Gobierno, proveniente del Sistema de intercambio de información, poseen plena validez para la gestión de servicios o tramites en la administración pública.";
+                        doc.text(text2, 15, currentY, { maxWidth: 180, align: "justify" });
+
+                        currentY += 48;
+                        doc.line(15, currentY, 195, currentY);
+                        currentY += 5;
+                        doc.text(`Fecha de emisión: 08/11/2023 15:28:36`, 15, currentY);
+                        currentY += 3;
+                        doc.line(15, currentY, 195, currentY);
+
+                        currentY += 8;
+                        
+                        const validationUrl = `https://www.paraguay.gov.py/validar?constancia_nro=${constancia}&codigo_seguridad=${code}`;
+
+                        if (window.QRious) {
+                            const qr = new QRious({
+                                value: validationUrl,
+                                size: 100,
+                                level: 'M'
+                            });
+                            doc.addImage(qr.toDataURL('image/jpeg'), 'JPEG', 15, currentY, 28, 28);
+                        } else {
+                            doc.setFillColor(50, 50, 50);
+                            doc.rect(15, currentY, 28, 28, 'F');
+                            doc.setFillColor(0, 0, 0);
+                        }
+
+                        doc.setTextColor(255, 204, 0); 
+                        doc.text("★", 60, currentY+12);
+                        doc.setTextColor(0, 0, 0);
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(14);
+                        doc.text("GOBIERNO DEL\nPARAGUAY", 68, currentY+10);
+                        
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(10);
+                        doc.text("Ministerio de Salud Pública y Bienestar Social a\ntravés del Sistema de Intercambio de Información", 120, currentY+10);
+                        
+                        currentY += 38;
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(9);
+                        doc.text(`Código de verificación: ${code}`, 15, currentY);
+                        doc.text("Verifique la validez de este documento", 15, currentY+5);
+                        
+                        doc.setTextColor(30, 58, 138);
+                        doc.text(validationUrl, 15, currentY+10);
+                        const bottomUrlWidth = doc.getTextWidth(validationUrl);
+                        doc.link(15, currentY+7, bottomUrlWidth, 4, { url: validationUrl });
+                        
+                    } else {
+                        doc.text("Certificado Electrónico validado correctamente.", 20, 30);
+                        doc.text(`Constancia: ${constancia}`, 20, 40);
+                    }
+
+                    doc.save(`Certificado_Vacunacion_${constancia}.pdf`);
+                } else {
+                    alert("Las librerías para PDF no se cargaron correctamente. Recarga la página.");
+                }
+            };
+
+            const handleValidate = (e) => {
+                e.preventDefault();
+                if (!code || !constancia) return;
+                setLoading(true);
+                
+                setTimeout(() => {
+                    setLoading(false);
+                    const mockResult = { 
+                        valid: true, 
+                        docId: 'RES-2026-0001', 
+                        title: 'Certificado Electrónico Internacional de Vacunación', 
+                        date: '2026-02-02', 
+                        author: 'FERNANDO MANUEL MANCIA ZELAYA', 
+                        hash: '8a7b9c1d2e3f4g5h6i7j8k9l0m...', 
+                        status: 'Activo' 
+                    };
+                    setValidationResult(mockResult);
+                    generatePDF();
+                }, 1500);
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn py-10">
+                    <div className="text-center space-y-3">
+                        <div className="mx-auto bg-brand-100 w-16 h-16 rounded-2xl flex items-center justify-center text-brand-600 mb-4 shadow-glow"><Icons.ShieldCheck size={36} /></div>
+                        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Validación Pública</h2>
+                        <p className="text-slate-500 max-w-md mx-auto">Verifique la autenticidad e integridad de los documentos.</p>
+                    </div>
+
+                    <Card className="p-8">
+                        <form onSubmit={handleValidate} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Nro de constancia</label>
+                                <input 
+                                    type="text" 
+                                    value={constancia} 
+                                    onChange={(e) => setConstancia(e.target.value)} 
+                                    placeholder="Ej: 4943710" 
+                                    className="w-full border border-slate-300 rounded-xl px-5 py-3 text-lg font-mono tracking-wide focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all" 
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Código de Verificación</label>
+                                <div className="flex gap-3">
+                                    <input type="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder="Ej: bbf911df" className="flex-1 border border-slate-300 rounded-xl px-5 py-3 text-lg font-mono tracking-wide focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all" />
+                                    <button type="button" className="px-4 py-3 border border-slate-300 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors" title="Escanear QR"><Icons.QrCode size={24} /></button>
+                                </div>
+                            </div>
+                            <Button variant="primary" className="w-full py-4 text-lg !shadow-xl hover:!shadow-2xl" disabled={loading || !code || !constancia}>
+                                {loading ? <span className="animate-pulse">Validando y Generando PDF...</span> : <><Icons.ShieldCheck size={24} /> Validar Integridad</>}
+                            </Button>
+                        </form>
+                    </Card>
+
+                    {validationResult && (
+                         <div className="bg-white rounded-2xl shadow-xl border-l-4 border-emerald-500 overflow-hidden animate-scaleIn">
+                             <div className="p-6 bg-emerald-50/50 flex items-start justify-between gap-4 border-b border-emerald-100">
+                                <div className="flex gap-4 items-start">
+                                    <div className="bg-emerald-100 text-emerald-600 p-2 rounded-full"><Icons.CheckCircle size={24} /></div>
+                                    <div><h3 className="font-bold text-emerald-900 text-lg">Documento Auténtico</h3><p className="text-emerald-700 text-sm">La firma digital y el sello de integridad son válidos.</p></div>
+                                </div>
+                             </div>
+                             <div className="p-8 grid grid-cols-2 gap-y-6 gap-x-8 text-sm">
+                                <div className="col-span-2">
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Documento</p>
+                                    <p className="text-lg font-semibold text-slate-900">{validationResult.title}</p>
+                                </div>
+                                <div><p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">ID / Cédula</p><p className="font-mono text-slate-700">3298639</p></div>
+                                <div><p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Estado</p><Badge status={validationResult.status} /></div>
+                                <div className="col-span-2 pt-4 border-t border-slate-100">
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Huella Digital (Hash)</p>
+                                    <div className="bg-slate-100 text-slate-600 p-3 rounded-lg font-mono text-xs break-all">{validationResult.hash}</div>
+                                </div>
+                             </div>
+                          </div>
+                    )}
+                </div>
+            );
+        };
+
+        const AdminTypesView = () => {
+            const [allSystemFields] = useState([ { id: 1, label: 'Asunto Principal' }, { id: 3, label: 'Fecha de Vigencia' }, { id: 5, label: 'Observaciones' }, { id: 9, label: 'Título del Documento' }, { id: 10, label: 'Fecha del Documento' }, { id: 11, label: 'Tipo de Visibilidad' }, { id: 6, label: 'Número de Expediente Relacionado' }, { id: 7, label: 'Departamento Solicitante' } ]);
+            
+            const [docTypes, setDocTypes] = useState([
+                { id: 1, name: 'Resolución Ministerial', code: 'RES', status: 'Activo', format: 'RES-12021001-0001', hasTemplate: true, fields: [allSystemFields[0], allSystemFields[3]] },
+                { id: 2, name: 'Informe Técnico', code: 'INF', status: 'Activo', format: 'INF-12021001-0001', hasTemplate: true, fields: [allSystemFields[5], allSystemFields[6]] }
+            ]);
+            
+            const [isCreating, setIsCreating] = useState(false);
+            const [searchQuery, setSearchQuery] = useState('');
+            const [columnFilters, setColumnFilters] = useState({ name: '', code: '', status: '' });
+            const [availableFields, setAvailableFields] = useState([]);
+            const [assignedFields, setAssignedFields] = useState([]);
+            const [newType, setNewType] = useState({ name: '', code: '', template: null });
+            
+            const [viewType, setViewType] = useState(null);
+            const [editType, setEditType] = useState(null);
+            const [deleteType, setDeleteType] = useState(null);
+
+            const moveField = (field, direction) => {
+                if (direction === 'toRight') {
+                    setAvailableFields(prev => prev.filter(f => f.id !== field.id));
+                    setAssignedFields(prev => [...prev, field]);
+                } else {
+                    setAssignedFields(prev => prev.filter(f => f.id !== field.id));
+                    setAvailableFields(prev => [...prev, field]);
+                }
+            };
+
+            const resetFields = () => { setAvailableFields([...allSystemFields]); setAssignedFields([]); };
+            
+            const handleSave = () => { 
+                if (newType.name && newType.code) { 
+                    setDocTypes([...docTypes, { id: docTypes.length + 1, ...newType, status: 'Activo', format: `${newType.code}-12021001-0001`, hasTemplate: !!newType.template, fields: assignedFields }]); 
+                    setIsCreating(false); setNewType({ name: '', code: '', template: null }); resetFields(); 
+                } 
+            };
+
+            const handleEditClick = (type) => {
+                setEditType({ ...type });
+                const assigned = type.fields || [];
+                setAssignedFields(assigned);
+                const assignedIds = assigned.map(f => f.id);
+                setAvailableFields(allSystemFields.filter(f => !assignedIds.includes(f.id)));
+            };
+
+            const handleUpdate = () => {
+                if (editType && editType.name && editType.code) {
+                    setDocTypes(docTypes.map(t => t.id === editType.id ? { 
+                        ...editType, 
+                        format: `${editType.code}-12021001-0001`,
+                        hasTemplate: !!editType.template || t.hasTemplate,
+                        fields: assignedFields
+                    } : t));
+                    setEditType(null);
+                    setAssignedFields([]);
+                    setAvailableFields([]);
+                }
+            };
+
+            const handleDeleteConfirm = () => {
+                if (deleteType) {
+                    setDocTypes(docTypes.filter(t => t.id !== deleteType.id));
+                    setDeleteType(null);
+                }
+            };
+
+            const auditHistory = [
+                { date: '2025-10-15 09:30', user: 'admin@gob.py', action: 'Creación del Tipo' },
+                { date: '2026-01-20 14:15', user: 'cgonzalez', action: 'Modificación de Formato' },
+                { date: '2026-02-02 10:05', user: 'sysadmin', action: 'Actualización de Plantilla' },
+            ];
+
+            const filteredDocTypes = docTypes.filter(t => {
+                const matchesGlobal = t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.code.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesName = t.name.toLowerCase().includes(columnFilters.name.toLowerCase());
+                const matchesCode = t.code.toLowerCase().includes(columnFilters.code.toLowerCase());
+                const matchesStatus = columnFilters.status === '' || t.status === columnFilters.status;
+                
+                return matchesGlobal && matchesName && matchesCode && matchesStatus;
+            });
+
+            return (
+                <div className="space-y-6 animate-fadeIn relative">
+                    <div className="flex justify-between items-center">
+                        <div><h2 className="text-2xl font-bold text-slate-800">Administración de Tipos</h2><p className="text-slate-500">Gestión de metadatos y definiciones.</p></div>
+                        {!isCreating && <Button onClick={() => { setIsCreating(true); resetFields(); }}><Icons.PlusCircle size={20} /> Crear Tipo</Button>}
+                    </div>
+
+                    {isCreating ? (
+                        <Card className="max-w-4xl mx-auto">
+                            <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-4"><h3 className="text-xl font-bold text-slate-800">Nuevo Tipo Documental</h3><button onClick={() => setIsCreating(false)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24} /></button></div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <div><label className="block text-sm font-semibold text-slate-700 mb-2">Nombre del Tipo</label><input type="text" value={newType.name} onChange={(e) => { const name = e.target.value; setNewType({ ...newType, name: name, code: name.slice(0, 3).toUpperCase() }) }} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Ej. Resolución" /></div>
+                                    <div><label className="block text-sm font-semibold text-slate-700 mb-2">Código</label><input type="text" value={newType.code} onChange={(e) => setNewType({...newType, code: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-slate-50 font-mono" /><p className="text-xs text-slate-400 mt-2 font-mono">Formato: {newType.code ? `${newType.code}-12021001-0001` : 'CODIGO-...'}</p></div>
+                                    <div className="border-2 border-dashed border-slate-300 rounded-2xl p-8 text-center hover:bg-slate-50 transition cursor-pointer" onClick={() => document.getElementById('template-upload').click()}><input id="template-upload" type="file" className="hidden" accept=".docx" onChange={(e) => { if (e.target.files?.[0]) setNewType({...newType, template: e.target.files[0].name}); }} /><div className="bg-brand-50 w-12 h-12 rounded-full flex items-center justify-center text-brand-600 mx-auto mb-3"><Icons.Upload size={24}/></div><p className="font-medium text-slate-700">{newType.template || "Subir Plantilla Base (.docx)"}</p></div>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-semibold text-slate-700">Asignación de Campos</label>
+                                    <div className="flex gap-4 h-80">
+                                        <div className="flex-1 border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50"><div className="bg-slate-100 p-2 text-xs font-bold text-slate-500 text-center uppercase tracking-wider">Disponibles</div><div className="p-2 space-y-1 overflow-y-auto">{availableFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toRight')} className="p-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300 hover:text-brand-600 hover:shadow-sm transition-all flex justify-between items-center group"><span>{field.label}</span><Icons.ArrowRight size={14} className="text-slate-300 group-hover:text-brand-500"/></div>))}</div></div>
+                                        <div className="flex-1 border border-brand-200 rounded-xl overflow-hidden flex flex-col bg-brand-50/30"><div className="bg-brand-100 p-2 text-xs font-bold text-brand-700 text-center uppercase tracking-wider">Asignados</div><div className="p-2 space-y-1 overflow-y-auto">{assignedFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toLeft')} className="p-2 bg-white border border-brand-200 rounded-lg text-sm font-medium text-brand-800 cursor-pointer hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-all flex justify-between items-center group"><Icons.ArrowLeft size={14} className="text-brand-300 group-hover:text-red-400"/><span>{field.label}</span></div>))}</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3"><Button variant="ghost" onClick={() => setIsCreating(false)}>Cancelar</Button><Button variant="primary" onClick={handleSave} disabled={!newType.name}><Icons.Save size={18}/> Guardar Tipo</Button></div>
+                        </Card>
+                    ) : (
+                        <div className="space-y-6">
+                            <Card className="flex flex-wrap gap-4 items-center !p-4">
+                                <div className="flex-1 relative group">
+                                    <Icons.Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-brand-600 transition-colors" size={20} />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Buscar tipo documental por nombre o código..." 
+                                        className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-all bg-slate-50/50 focus:bg-white"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <Button variant="secondary" className="!px-4" onClick={() => { setSearchQuery(''); setColumnFilters({ name: '', code: '', status: '' }); }}>
+                                    <Icons.Filter size={20} /> <span className="ml-2 text-sm">Limpiar</span>
+                                </Button>
+                            </Card>
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                 <table className="w-full text-left">
+                                    <thead className="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+                                        <tr>
+                                            <th className="px-6 py-4 pb-2">Nombre</th>
+                                            <th className="px-6 py-4 pb-2">Código</th>
+                                            <th className="px-6 py-4 pb-2">Estado</th>
+                                            <th className="px-6 py-4 pb-2 text-right">Acciones</th>
+                                        </tr>
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="px-6 pb-4 pt-0">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Filtrar..." 
+                                                    className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white"
+                                                    value={columnFilters.name}
+                                                    onChange={(e) => setColumnFilters({...columnFilters, name: e.target.value})}
+                                                />
+                                            </th>
+                                            <th className="px-6 pb-4 pt-0">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Filtrar..." 
+                                                    className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white"
+                                                    value={columnFilters.code}
+                                                    onChange={(e) => setColumnFilters({...columnFilters, code: e.target.value})}
+                                                />
+                                            </th>
+                                            <th className="px-6 pb-4 pt-0">
+                                                <select 
+                                                    className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white cursor-pointer"
+                                                    value={columnFilters.status}
+                                                    onChange={(e) => setColumnFilters({...columnFilters, status: e.target.value})}
+                                                >
+                                                    <option value="">Todos</option>
+                                                    <option value="Activo">Activo</option>
+                                                    <option value="Inactivo">Inactivo</option>
+                                                </select>
+                                            </th>
+                                            <th className="px-6 pb-4 pt-0"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredDocTypes.map(t => (
+                                         <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                                             <td className="px-6 py-4 font-medium text-slate-800">{t.name}</td>
+                                             <td className="px-6 py-4 font-mono text-sm text-slate-600">{t.code}</td>
+                                             <td className="px-6 py-4"><Badge status={t.status} /></td>
+                                             <td className="px-6 py-4 text-right"><div className="flex justify-end gap-1"><button onClick={() => setViewType(t)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg"><Icons.Eye size={18} /></button><button onClick={() => handleEditClick(t)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><Icons.Edit size={18} /></button><button onClick={() => setDeleteType(t)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Icons.Trash size={18} /></button></div></td>
+                                         </tr>
+                                        ))}
+                                        {filteredDocTypes.length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-12 text-center text-slate-400 italic">No se encontraron resultados para la búsqueda.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                 </table>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {viewType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"><Card className="w-[600px] animate-scaleIn">
+                        <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6"><h3 className="font-bold text-xl text-slate-800">{viewType.name}</h3><button onClick={() => setViewType(null)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24}/></button></div>
+                        <div className="grid grid-cols-2 gap-6 mb-6">
+                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Código</p><p className="font-mono text-slate-700 bg-slate-50 p-2 rounded">{viewType.code}</p></div>
+                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Formato</p><p className="font-mono text-slate-700 bg-slate-50 p-2 rounded">{viewType.format}</p></div>
+                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Estado</p><Badge status={viewType.status} /></div>
+                            <div><p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Plantilla</p><div className="flex items-center gap-2 text-sm text-slate-700">{viewType.hasTemplate ? <><Icons.Paperclip size={16} className="text-brand-500"/> Asignada</> : <span className="text-slate-400 italic">No asignada</span>}</div></div>
+                        </div>
+                        <div className="mb-6">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Campos Asociados</p>
+                            <div className="flex flex-wrap gap-2">
+                                {viewType.fields && viewType.fields.length > 0 ? viewType.fields.map(f => (<span key={f.id} className="text-xs bg-brand-50 text-brand-700 px-2.5 py-1 rounded-full border border-brand-100">{f.label}</span>)) : <span className="text-sm text-slate-400 italic">Sin campos específicos</span>}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h4 className="font-bold text-slate-400 uppercase text-xs tracking-wider mb-3 flex items-center gap-2"><Icons.History size={14}/> Historial de Auditoría</h4>
+                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                <table className="w-full text-left text-xs">
+                                    <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+                                            <tr>
+                                                <th className="px-4 py-2">Fecha</th>
+                                                <th className="px-4 py-2">Usuario</th>
+                                                <th className="px-4 py-2">Acción</th>
+                                            </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {auditHistory.map((audit, i) => (
+                                            <tr key={i} className="hover:bg-slate-50">
+                                                <td className="px-4 py-2 text-slate-600">{audit.date}</td>
+                                                <td className="px-4 py-2 text-slate-800 font-medium">{audit.user}</td>
+                                                <td className="px-4 py-2 text-slate-600">{audit.action}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end"><Button variant="secondary" onClick={() => setViewType(null)}>Cerrar</Button></div>
+                    </Card></div>}
+
+                    {editType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn"><Card className="w-[800px] animate-scaleIn max-h-[90vh] overflow-y-auto">
+                        <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6"><h3 className="font-bold text-xl text-slate-800">Editar Tipo Documental</h3><button onClick={() => setEditType(null)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24}/></button></div>
+                        <div className="grid grid-cols-2 gap-8">
+                            <div className="space-y-4">
+                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Nombre</label><input type="text" value={editType.name} onChange={(e) => setEditType({...editType, name: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3" /></div>
+                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Código</label><input type="text" value={editType.code} onChange={(e) => setEditType({...editType, code: e.target.value.toUpperCase()})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-slate-50 font-mono" /></div>
+                                <div><label className="block text-sm font-semibold text-slate-700 mb-2">Estado</label><select value={editType.status} onChange={(e) => setEditType({...editType, status: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+                                <div className="border-2 border-dashed border-slate-300 rounded-2xl p-4 text-center hover:bg-slate-50 cursor-pointer flex items-center justify-center gap-3"><div className="bg-brand-50 p-2 rounded-full text-brand-600"><Icons.Upload size={20}/></div><span className="text-sm font-medium text-slate-600">Actualizar Plantilla</span></div>
+                            </div>
+                            <div className="space-y-3">
+                                <label className="block text-sm font-semibold text-slate-700">Editar Asignación de Campos</label>
+                                <div className="flex gap-4 h-64">
+                                    <div className="flex-1 border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50"><div className="bg-slate-100 p-2 text-xs font-bold text-slate-500 text-center uppercase">Disponibles</div><div className="p-2 space-y-1 overflow-y-auto">{availableFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toRight')} className="p-2 bg-white border border-slate-200 rounded-lg text-sm cursor-pointer hover:border-brand-300 hover:text-brand-600 flex justify-between items-center"><span>{field.label}</span><Icons.ArrowRight size={14}/></div>))}</div></div>
+                                    <div className="flex-1 border border-brand-200 rounded-xl overflow-hidden flex flex-col bg-brand-50/30"><div className="bg-brand-100 p-2 text-xs font-bold text-brand-700 text-center uppercase">Asignados</div><div className="p-2 space-y-1 overflow-y-auto">{assignedFields.map(field => (<div key={field.id} onClick={() => moveField(field, 'toLeft')} className="p-2 bg-white border border-brand-200 rounded-lg text-sm font-medium text-brand-800 cursor-pointer hover:bg-red-50 hover:text-red-600 flex justify-between items-center"><Icons.ArrowLeft size={14}/><span>{field.label}</span></div>))}</div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end gap-3"><Button variant="ghost" onClick={() => setEditType(null)}>Cancelar</Button><Button variant="primary" onClick={handleUpdate}><Icons.Save size={18}/> Guardar Cambios</Button></div>
+                    </Card></div>}
+
+                    {deleteType && <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50"><Card className="w-96 text-center animate-scaleIn"><div className="mx-auto bg-red-100 w-16 h-16 rounded-full flex items-center justify-center text-red-600 mb-4"><Icons.AlertTriangle size={32}/></div><h3 className="font-bold text-lg">¿Eliminar {deleteType.name}?</h3><div className="mt-6 flex justify-center gap-2"><Button variant="ghost" onClick={() => setDeleteType(null)}>Cancelar</Button><Button variant="danger" onClick={handleDeleteConfirm}>Eliminar</Button></div></Card></div>}
+                </div>
+            );
+        };
+
         const App = () => {
             const [activeTab, setActiveTab] = useState('repository');
             const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
@@ -1306,21 +1656,26 @@
             ]);
 
             return (
-                <div className="flex h-screen bg-slate-100 font-sans text-slate-900">
+                <div className="flex h-screen bg-slate-100 font-sans text-slate-900 animate-fadeIn">
                     <div className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20">
                         <div className="p-6 border-b border-slate-800"><div className="flex items-center space-x-3"><div className="bg-white/10 p-2 rounded-lg"><Icons.Building size={24} className="text-blue-400" /></div><div><h1 className="font-bold text-lg leading-tight">Gestión Documental</h1><p className="text-xs text-slate-400">Gobierno Nacional</p></div></div></div>
                         <nav className="flex-1 py-6 space-y-1">
                             <SidebarItem id="repository" icon="FolderOpen" label="Repositorio" active={activeTab === 'repository'} onClick={setActiveTab} />
                             <SidebarItem id="create" icon="Plus" label="Nuevo Documento" active={activeTab === 'create'} onClick={setActiveTab} />
-                            <SidebarItem id="my_documents" icon="User" label="Mis Documentos" active={activeTab === 'my_documents'} onClick={setActiveTab} />
+                            <SidebarItem id="my_documents" icon="User" label="Mi Dependencia" active={activeTab === 'my_documents'} onClick={setActiveTab} />
                             <SidebarItem id="validate" icon="Shield" label="Validar Documento" active={activeTab === 'validate'} onClick={setActiveTab} />
                             <SidebarItem id="integration" icon="LinkIcon" label="Relacionar a Expedientes" active={activeTab === 'integration'} onClick={setActiveTab} />
                             <div><button onClick={() => setIsAdminMenuOpen(!isAdminMenuOpen)} className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white"><div className="flex items-center space-x-3"><Icons.Settings size={20} /><span>Administración</span></div>{isAdminMenuOpen ? <Icons.ChevronDown size={16} /> : <Icons.ChevronRight size={16} />}</button>{isAdminMenuOpen && <div className="bg-slate-950 py-1"><button onClick={() => setActiveTab('admin_types')} className="w-full flex items-center space-x-3 pl-12 pr-4 py-2 text-sm font-medium text-slate-500 hover:text-white"><span>Tipos de Documento</span></button></div>}</div>
                         </nav>
-                        <div className="p-4 bg-slate-800 m-4 rounded-xl"><div className="flex items-center space-x-3 mb-2"><div className="bg-blue-500 rounded-full p-1"><Icons.User size={14} className="text-white" /></div><div><p className="text-sm font-medium">Cynthia Gonzalez</p><p className="text-xs text-slate-400">Analista</p></div></div></div>
+                        <div className="p-4 bg-slate-800 m-4 rounded-xl flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <div className="bg-blue-500 rounded-full p-1"><Icons.User size={14} className="text-white" /></div>
+                                <div><p className="text-sm font-medium">Cynthia Gonzalez</p><p className="text-xs text-slate-400">Analista</p></div>
+                            </div>
+                        </div>
                     </div>
                     <div className="flex-1 flex flex-col overflow-hidden">
-                        <header className="bg-white shadow-sm border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10"><div><h2 className="text-xl font-semibold text-slate-800">{activeTab === 'repository' ? 'Bandeja de Documentos' : activeTab === 'my_documents' ? 'Mis Documentos' : activeTab === 'create' ? 'Generación de Documentos' : activeTab === 'validate' ? 'Validación Pública' : activeTab === 'integration' ? 'Interoperabilidad' : 'Administración'}</h2></div><div className="flex items-center space-x-4"><div className="text-right hidden md:block"><p className="text-xs text-slate-500">Última sincronización</p><p className="text-sm font-medium text-slate-700">Hoy, 10:00 AM</p></div></div></header>
+                        <header className="bg-white shadow-sm border-b border-slate-200 px-8 py-4 flex justify-between items-center z-10"><div><h2 className="text-xl font-semibold text-slate-800">{activeTab === 'repository' ? 'Bandeja de Documentos' : activeTab === 'my_documents' ? 'Mi Dependencia' : activeTab === 'create' ? 'Generación de Documentos' : activeTab === 'validate' ? 'Validación Pública' : activeTab === 'integration' ? 'Interoperabilidad' : 'Administración'}</h2></div><div className="flex items-center space-x-4"><div className="text-right hidden md:block"><p className="text-xs text-slate-500">Última sincronización</p><p className="text-sm font-medium text-slate-700">Hoy, 10:00 AM</p></div></div></header>
                         <main className="flex-1 overflow-auto p-8">
                             {activeTab === 'repository' && <RepositoryView setActiveTab={setActiveTab} documents={documents} setDocuments={setDocuments} />}
                             {activeTab === 'my_documents' && <RepositoryView setActiveTab={setActiveTab} documents={documents} setDocuments={setDocuments} onlyUserDocs={true} />}
