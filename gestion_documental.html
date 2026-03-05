@@ -241,8 +241,11 @@
                 
                 // Filtro específico para "Mi Dependencia"
                 const matchesUser = onlyUserDocs ? doc.author === currentUser : true;
+                
+                // Filtro de Visibilidad: Si estamos en Repositorio Central, ocultar los privados
+                const matchesVisibility = onlyUserDocs ? true : (doc.visibility !== 'Privado');
 
-                return matchesGlobal && matchesTitle && matchesType && matchesKeyword && matchesAuthor && matchesDate && matchesInst && matchesExp && matchesStatus && matchesUser;
+                return matchesGlobal && matchesTitle && matchesType && matchesKeyword && matchesAuthor && matchesDate && matchesInst && matchesExp && matchesStatus && matchesUser && matchesVisibility;
             });
 
             return (
@@ -602,7 +605,8 @@
                     institution: 'Ministerio de Tecnologías', 
                     status: 'Guardado', 
                     digitaliaId: null, 
-                    hash: '7f8...1a' 
+                    hash: '7f8...1a',
+                    visibility: formData.visibility
                 }, ...prev]); 
             };
             
@@ -954,7 +958,7 @@
 
                                                  <div className={`relative transition-opacity duration-300 ${!isSaved ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                                                      <button 
-                                                         onClick={() => { setActiveTab('repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} 
+                                                         onClick={() => { setActiveTab(formData.visibility === 'Privado' ? 'my_documents' : 'repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} 
                                                          className="w-full py-4 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 border border-slate-700"
                                                      >
                                                          <Icons.CheckSquare size={24}/>
@@ -968,6 +972,39 @@
                                      </div>
                                  </div>
                              </div>
+                        )}
+
+                        {step === 4 && (
+                            <div className="space-y-8 animate-fadeIn p-4">
+                                <div className="bg-emerald-50 border border-emerald-200 p-8 rounded-2xl flex items-center gap-6 shadow-sm"><div className="bg-emerald-100 p-4 rounded-full text-emerald-600 shadow-inner"><Icons.CheckCircle size={40} /></div><div><h3 className="text-2xl font-bold text-emerald-900 mb-1">¡Proceso Finalizado con Éxito!</h3><p className="text-emerald-700 text-lg">El documento ha sido guardado en el repositorio y vinculado a los expedientes seleccionados.</p></div></div>
+                                <div className="grid grid-cols-3 gap-8">
+                                    <Card className="col-span-2">
+                                        <h4 className="font-bold text-slate-800 text-lg mb-6 pb-2 border-b border-slate-100 flex items-center gap-2"><Icons.FileText className="text-slate-400"/> Detalles del Documento</h4>
+                                        <div className="grid grid-cols-2 gap-y-6 gap-x-8">
+                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Título</p><p className="text-lg font-medium text-slate-900">{creationMode === 'form' ? formData.title : `${selectedTemplate} N° 2026/45`}</p></div>
+                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">ID Sistema</p><p className="font-mono text-slate-600 bg-slate-100 w-fit px-2 rounded">{generatedId || 'Calculando...'}</p></div>
+                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Fecha Emisión</p><p className="text-slate-800">{creationMode === 'form' ? formData.date : '02/02/2026'}</p></div>
+                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Responsable</p><div className="flex items-center gap-2"><div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center text-xs font-bold text-brand-600">CG</div><span className="text-slate-800">{creationMode === 'form' ? formData.responsible : 'Cynthia Gonzalez'}</span></div></div>
+                                        </div>
+                                    </Card>
+                                    <Card className="col-span-1 bg-indigo-50/50 border-indigo-100">
+                                        <h4 className="font-bold text-indigo-900 text-lg mb-6 pb-2 border-b border-indigo-100 flex items-center gap-2"><Icons.LinkIcon/> Expedientes ({relatedTramites.length})</h4>
+                                        <div className="space-y-3">
+                                            {relatedTramites.length > 0 ? (
+                                                relatedTramites.map((tramite, idx) => (
+                                                    <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-indigo-50 flex justify-between items-center group hover:shadow-md transition-all">
+                                                        <div><p className="font-bold text-indigo-700 text-sm">{tramite.id}</p><p className="text-xs text-slate-500 truncate max-w-[150px]">{tramite.title}</p></div>
+                                                        <a href="#" className="text-indigo-400 hover:text-indigo-600"><Icons.ExternalLink size={18}/></a>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-center text-slate-400 italic py-4">No se realizaron vinculaciones.</p>
+                                            )}
+                                        </div>
+                                    </Card>
+                                </div>
+                                <div className="flex justify-center pt-6"><Button variant="primary" onClick={() => { setActiveTab(formData.visibility === 'Privado' ? 'my_documents' : 'repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} className="!px-8 !py-3 !text-lg shadow-xl hover:shadow-2xl"><Icons.Home size={20} /> {formData.visibility === 'Privado' ? 'Volver a Mi Dependencia' : 'Volver al Repositorio'}</Button></div>
+                            </div>
                         )}
 
                         {step === 4 && (
