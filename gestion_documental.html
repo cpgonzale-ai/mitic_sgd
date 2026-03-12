@@ -212,12 +212,66 @@
             const [viewDoc, setViewDoc] = useState(null);
             const [editDoc, setEditDoc] = useState(null);
             const [deleteDoc, setDeleteDoc] = useState(null);
+            const [newExpedienteInput, setNewExpedienteInput] = useState('');
+            const [editExpedienteSearchResults, setEditExpedienteSearchResults] = useState([]);
 
             const handleUpdateDoc = () => {
                 if (editDoc) {
-                    setDocuments(documents.map(d => d.id === editDoc.id ? editDoc : d));
+                    const updatedDoc = {
+                        ...editDoc,
+                        digitaliaId: editDoc.expedientes && editDoc.expedientes.length > 0 ? editDoc.expedientes[0] : null
+                    };
+                    setDocuments(documents.map(d => d.id === editDoc.id ? updatedDoc : d));
                     setEditDoc(null);
                 }
+            };
+
+            const handleEditClick = (doc) => {
+                setEditDoc({
+                    ...doc,
+                    expedientes: doc.expedientes ? [...doc.expedientes] : (doc.digitaliaId ? [doc.digitaliaId] : [])
+                });
+                setNewExpedienteInput('');
+                setEditExpedienteSearchResults([]);
+            };
+
+            const handleSearchEditExpediente = (term) => {
+                setNewExpedienteInput(term);
+                if (term.trim().length > 0) {
+                    // Base de datos simulada de expedientes
+                    const mockDB = [
+                        { id: 'EXP-2026-8812', title: 'Solicitud de Insumos - Dpto. IT' },
+                        { id: 'EXP-2026-9923', title: 'Auditoría Financiera Q1' },
+                        { id: 'EXP-2026-1024', title: 'Reestructuración de Personal' },
+                        { id: 'EXP-2026-3341', title: 'Licitación Pública Nacional 04/2026' },
+                        { id: 'EXP-2026-5522', title: 'Renovación de Licencias de Software' }
+                    ];
+                    
+                    const results = mockDB.filter(exp => 
+                        exp.id.toLowerCase().includes(term.toLowerCase()) || 
+                        exp.title.toLowerCase().includes(term.toLowerCase())
+                    );
+
+                    // Si no encuentra, sugiere unos genéricos basados en el texto
+                    if (results.length === 0) {
+                        setEditExpedienteSearchResults([
+                            { id: `EXP-2026-${Math.floor(Math.random() * 1000) + 1000}`, title: `Expediente relacionado a: ${term}` },
+                            { id: `EXP-2026-${Math.floor(Math.random() * 1000) + 5000}`, title: `Anexos - ${term}` }
+                        ]);
+                    } else {
+                        setEditExpedienteSearchResults(results.slice(0, 3));
+                    }
+                } else {
+                    setEditExpedienteSearchResults([]);
+                }
+            };
+
+            const handleSelectEditExpediente = (exp) => {
+                if (!(editDoc.expedientes || []).includes(exp.id)) {
+                    setEditDoc({...editDoc, expedientes: [...(editDoc.expedientes || []), exp.id]});
+                }
+                setNewExpedienteInput('');
+                setEditExpedienteSearchResults([]);
             };
 
             const handleDeleteConfirm = () => {
@@ -245,8 +299,72 @@
                 // Filtro de Visibilidad: Si estamos en Repositorio Central, ocultar los privados
                 const matchesVisibility = onlyUserDocs ? true : (doc.visibility !== 'Privado');
 
-                return matchesGlobal && matchesTitle && matchesType && matchesKeyword && matchesAuthor && matchesDate && matchesInst && matchesExp && matchesStatus && matchesUser && matchesVisibility;
+                // Filtro de Estado: En Repositorio Central solo mostrar Activo/Inactivo
+                const isAllowedStatus = onlyUserDocs ? true : ['Activo', 'Inactivo'].includes(doc.status);
+
+                return matchesGlobal && matchesTitle && matchesType && matchesKeyword && matchesAuthor && matchesDate && matchesInst && matchesExp && matchesStatus && matchesUser && matchesVisibility && isAllowedStatus;
             });
+
+            const handleDownloadDoc = (doc) => {
+                if (window.jspdf && window.jspdf.jsPDF) {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF();
+                    
+                    // Cabecera
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setFontSize(16);
+                    pdf.text("GOBIERNO DEL PARAGUAY", 105, 20, { align: "center" });
+                    pdf.setFontSize(12);
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text("Sistema de Gestión Documental Unificado", 105, 28, { align: "center" });
+                    
+                    pdf.setDrawColor(200, 200, 200);
+                    pdf.line(20, 35, 190, 35);
+                    
+                    // Título del Documento
+                    pdf.setTextColor(0, 0, 0);
+                    pdf.setFontSize(14);
+                    const splitTitle = pdf.splitTextToSize(doc.title.toUpperCase(), 170);
+                    pdf.text(splitTitle, 105, 50, { align: "center" });
+                    
+                    // Cuerpo / Detalles
+                    pdf.setFont("helvetica", "bold");
+                    pdf.setFontSize(10);
+                    pdf.text("DETALLES DEL DOCUMENTO", 20, 75);
+                    pdf.line(20, 77, 75, 77);
+
+                    pdf.setFont("helvetica", "normal");
+                    pdf.setFontSize(11);
+                    pdf.text(`ID / Formato:`, 20, 90); pdf.setFont("helvetica", "bold"); pdf.text(doc.id, 65, 90); pdf.setFont("helvetica", "normal");
+                    pdf.text(`Tipo:`, 20, 100); pdf.setFont("helvetica", "bold"); pdf.text(doc.type || '-', 65, 100); pdf.setFont("helvetica", "normal");
+                    pdf.text(`Autor:`, 20, 110); pdf.setFont("helvetica", "bold"); pdf.text(doc.author, 65, 110); pdf.setFont("helvetica", "normal");
+                    pdf.text(`Fecha:`, 20, 120); pdf.setFont("helvetica", "bold"); pdf.text(doc.date, 65, 120); pdf.setFont("helvetica", "normal");
+                    pdf.text(`Institución:`, 20, 130); pdf.setFont("helvetica", "bold"); pdf.text(doc.institution || 'Gobierno Nacional', 65, 130); pdf.setFont("helvetica", "normal");
+                    pdf.text(`Estado:`, 20, 140); pdf.setFont("helvetica", "bold"); pdf.text(doc.status, 65, 140); pdf.setFont("helvetica", "normal");
+                    
+                    if (doc.digitaliaId) {
+                        pdf.text(`Expediente:`, 20, 150); pdf.setFont("helvetica", "bold"); pdf.text(doc.digitaliaId, 65, 150); pdf.setFont("helvetica", "normal");
+                    }
+                    
+                    // Pie de página
+                    pdf.setFont("helvetica", "italic");
+                    pdf.setFontSize(9);
+                    pdf.setTextColor(150, 150, 150);
+                    pdf.text("Este es un documento generado automáticamente por el repositorio del sistema.", 105, 270, { align: "center" });
+                    
+                    // Generar y descargar
+                    pdf.save(`${doc.id}_${doc.title.replace(/\s+/g, '_')}.pdf`);
+                } else {
+                    // Fallback a txt si falla la carga de jsPDF
+                    const element = document.createElement("a");
+                    const file = new Blob([`Documento: ${doc.title}\nID: ${doc.id}\nAutor: ${doc.author}\nFecha: ${doc.date}`], {type: 'text/plain'});
+                    element.href = URL.createObjectURL(file);
+                    element.download = `${doc.id}.txt`;
+                    document.body.appendChild(element); 
+                    element.click();
+                    document.body.removeChild(element);
+                }
+            };
 
             return (
                 <div className="space-y-8 animate-fadeIn relative p-2">
@@ -290,7 +408,7 @@
                                 {/* Fila de Títulos */}
                                 <tr>
                                     <th className="px-6 py-4 text-left font-semibold pb-2">Nombre</th>
-                                    <th className="px-6 py-4 text-left font-semibold pb-2">Tipo</th>
+                                    <th className="px-6 py-4 text-left font-semibold pb-2">Tipo de Documento</th>
                                     <th className="px-6 py-4 text-left font-semibold pb-2">Palabra Clave</th>
                                     <th className="px-6 py-4 text-left font-semibold pb-2">Autor</th>
                                     <th className="px-6 py-4 text-center font-semibold pb-2">Fecha</th>
@@ -313,7 +431,7 @@
                                     <th className="px-6 pb-4 pt-0">
                                         <input 
                                             type="text" 
-                                            placeholder="Tipo..." 
+                                            placeholder="Tipo de Documento..." 
                                             className="w-full px-3 py-2 text-sm font-normal border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none bg-white"
                                             value={columnFilters.type}
                                             onChange={(e) => setColumnFilters({...columnFilters, type: e.target.value})}
@@ -373,7 +491,7 @@
                                             <option value="">Todos</option>
                                             <option value="Activo">Activo</option>
                                             <option value="Inactivo">Inactivo</option>
-                                            <option value="Guardado">Guardado</option>
+                                            {onlyUserDocs && <option value="Guardado">Guardado</option>}
                                         </select>
                                     </th>
                                     <th className="px-6 pb-4 pt-0"></th>
@@ -382,8 +500,9 @@
                             <tbody className="divide-y divide-slate-100">
                                 {filteredDocs.map((doc) => (
                                     <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors group">
-                                        <td className="px-6 py-4 align-middle font-semibold text-slate-900 font-mono text-sm">
-                                            {doc.id}
+                                        <td className="px-6 py-4 align-middle">
+                                            <p className="font-semibold text-slate-900 text-sm">{doc.title}</p>
+                                            <p className="font-mono text-xs text-slate-500 mt-0.5">{doc.id}</p>
                                         </td>
                                         <td className="px-6 py-4 align-middle text-sm text-slate-700 font-medium">
                                             {doc.type}
@@ -408,6 +527,9 @@
                                             {doc.digitaliaId ? (
                                                 <span className="inline-flex items-center justify-center gap-1.5 text-xs font-medium text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg border border-brand-100">
                                                     <Icons.LinkIcon size={12} /><span>{doc.digitaliaId}</span>
+                                                    {doc.expedientes && doc.expedientes.length > 1 && (
+                                                        <span className="bg-brand-200 text-brand-800 px-1.5 py-0.5 rounded-full text-[10px] ml-0.5 font-bold">+{doc.expedientes.length - 1}</span>
+                                                    )}
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center justify-center text-xs text-slate-400 italic gap-1"><Icons.X size={12}/> Sin vincular</span>
@@ -417,9 +539,9 @@
                                         <td className="px-6 py-4 align-middle text-center">
                                             <div className="flex justify-center gap-1">
                                                 <button onClick={() => setViewDoc(doc)} className="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-all" title="Visualizar"><Icons.Eye size={18} /></button>
-                                                <button onClick={() => setEditDoc({...doc})} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Editar"><Icons.Edit size={18} /></button>
+                                                <button onClick={() => handleEditClick(doc)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all" title="Editar"><Icons.Edit size={18} /></button>
                                                 <button onClick={() => setDeleteDoc(doc)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Eliminar"><Icons.Trash size={18} /></button>
-                                                <button onClick={() => alert("Descargando documento...")} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Descargar"><Icons.Download size={18} /></button>
+                                                <button onClick={() => handleDownloadDoc(doc)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Descargar"><Icons.Download size={18} /></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -438,29 +560,42 @@
                     {/* Modales */}
                     {viewDoc && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
-                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scaleIn">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-scaleIn flex flex-col max-h-[90vh]">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50 shrink-0">
                                     <div className="flex items-center gap-4">
                                         <div className="bg-brand-100 p-3 rounded-xl text-brand-600"><Icons.FileText size={28} /></div>
                                         <div>
-                                            <h3 className="font-bold text-xl text-slate-900">{viewDoc.title}</h3>
-                                            <p className="text-sm text-slate-500 font-mono mt-0.5">{viewDoc.id}</p>
+                                            <h3 className="font-bold text-xl text-slate-900">Visualizar Documento</h3>
                                         </div>
                                     </div>
                                     <button onClick={() => setViewDoc(null)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-full transition-colors"><Icons.X size={24} /></button>
                                 </div>
-                                <div className="p-8 space-y-8">
-                                    <div className="grid grid-cols-2 gap-8">
+                                <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Título del Documento</p>
+                                        <p className="text-slate-800 font-medium text-lg">{viewDoc.title}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                                         <div><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Tipo Documental</p><p className="text-slate-800 font-medium text-lg">{viewDoc.type}</p></div>
                                         <div><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Estado Actual</p><Badge status={viewDoc.status} /></div>
-                                        <div><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Autor</p><div className="flex items-center gap-2 text-slate-800"><Icons.User size={18} className="text-slate-400"/>{viewDoc.author}</div></div>
                                         <div><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Fecha</p><div className="flex items-center gap-2 text-slate-800"><Icons.Calendar size={18} className="text-slate-400"/>{viewDoc.date}</div></div>
+                                        <div className="col-span-2 md:col-span-1"><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Autor</p><div className="flex items-center gap-2 text-slate-800"><Icons.User size={18} className="text-slate-400"/>{viewDoc.author}</div></div>
+                                        <div className="col-span-2 md:col-span-2"><p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Formato</p><div className="font-mono text-slate-800 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 w-fit">{viewDoc.id}</div></div>
                                     </div>
                                     
                                     <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-5 relative overflow-hidden">
                                         <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.LinkIcon size={80}/></div>
                                         <h4 className="font-bold text-indigo-900 text-sm mb-3 flex items-center gap-2 relative z-10"><Icons.LinkIcon size={18} /> Integración Digitalia</h4>
-                                        {viewDoc.digitaliaId ? (
+                                        {viewDoc.expedientes && viewDoc.expedientes.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+                                                {viewDoc.expedientes.map((exp, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center bg-white/60 p-3 rounded-lg border border-indigo-100/50 backdrop-blur-sm">
+                                                        <span className="text-indigo-800 text-sm font-medium">Exp: <strong className="text-indigo-950">{exp}</strong></span>
+                                                        <a href="#" className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline">Ver <Icons.ExternalLink size={14} /></a>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : viewDoc.digitaliaId ? (
                                             <div className="flex justify-between items-center relative z-10 bg-white/60 p-3 rounded-lg border border-indigo-100/50 backdrop-blur-sm">
                                                 <span className="text-indigo-800 text-sm font-medium">Vinculado al expediente: <strong className="text-indigo-950">{viewDoc.digitaliaId}</strong></span>
                                                 <a href="#" className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline">Ver expediente <Icons.ExternalLink size={14} /></a>
@@ -474,15 +609,15 @@
                                             <table className="w-full text-left text-sm">
                                                 <thead className="bg-slate-50 text-slate-500 border-b border-slate-200"><tr><th className="px-5 py-3 font-medium">Fecha</th><th className="px-5 py-3 font-medium">Usuario</th><th className="px-5 py-3 font-medium">Acción</th></tr></thead>
                                                 <tbody className="divide-y divide-slate-100 bg-white">
-                                                    <tr><td className="px-5 py-3 text-slate-600">{viewDoc.date} 09:00</td><td className="px-5 py-3 text-slate-800 font-medium">rantola</td><td className="px-5 py-3 text-slate-600">Creación del Documento</td></tr>
-                                                    <tr><td className="px-5 py-3 text-slate-800 font-medium">rantola</td><td className="px-5 py-3 text-slate-600">Firma Digital</td></tr>
+                                                    <tr><td className="px-5 py-3 text-slate-600">{viewDoc.date} 09:00</td><td className="px-5 py-3 text-slate-800 font-medium">{viewDoc.author || 'Usuario'}</td><td className="px-5 py-3 text-slate-600">Creación del Documento</td></tr>
+                                                    <tr><td className="px-5 py-3 text-slate-800 font-medium">{viewDoc.author || 'Usuario'}</td><td className="px-5 py-3 text-slate-600">Firma Digital</td></tr>
                                                 </tbody>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-200">
-                                    <Button variant="secondary" onClick={() => alert("Descargando...")}><Icons.Download size={18} /> Descargar</Button>
+                                <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-200 shrink-0">
+                                    <Button variant="secondary" onClick={() => handleDownloadDoc(viewDoc)}><Icons.Download size={18} /> Descargar</Button>
                                     <Button variant="primary" onClick={() => setViewDoc(null)} className="!bg-slate-800 !text-white hover:!bg-slate-900">Cerrar</Button>
                                 </div>
                             </div>
@@ -491,22 +626,156 @@
                     
                     {editDoc && (
                         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn p-4">
-                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-scaleIn">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                                    <h3 className="font-bold text-xl text-slate-800">Editar Documento</h3>
-                                    <button onClick={() => setEditDoc(null)} className="text-slate-400 hover:text-slate-600"><Icons.X size={24} /></button>
-                                </div>
-                                <div className="p-8 space-y-6">
-                                    <div><label className="block text-sm font-semibold text-slate-700 mb-2">Título del Documento</label><input type="text" value={editDoc.title} onChange={(e) => setEditDoc({...editDoc, title: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all" /></div>
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div><label className="block text-sm font-semibold text-slate-700 mb-2">Tipo</label><select value={editDoc.type} onChange={(e) => setEditDoc({...editDoc, type: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none"><option>Resolución</option><option>Informe Técnico</option><option>Dictamen</option></select></div>
-                                        <div><label className="block text-sm font-semibold text-slate-700 mb-2">Estado</label><select value={editDoc.status} onChange={(e) => setEditDoc({...editDoc, status: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden animate-scaleIn flex flex-col max-h-[90vh]">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50 shrink-0">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-amber-100 p-3 rounded-xl text-amber-600"><Icons.Edit size={28} /></div>
+                                        <div>
+                                            <h3 className="font-bold text-xl text-slate-900">Editar Documento</h3>
+                                        </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <div><label className="block text-sm font-semibold text-slate-700 mb-2">Autor</label><input type="text" value={editDoc.author} onChange={(e) => setEditDoc({...editDoc, author: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 outline-none" /></div>
+                                    <button onClick={() => setEditDoc(null)} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-full transition-colors"><Icons.X size={24} /></button>
+                                </div>
+                                <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Título del Documento</p>
+                                        <input type="text" value={editDoc.title} onChange={(e) => setEditDoc({...editDoc, title: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all text-slate-800 font-medium" />
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                        <div>
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Tipo Documental</p>
+                                            <select value={editDoc.type} onChange={(e) => setEditDoc({...editDoc, type: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none text-slate-800 font-medium">
+                                                <option>Resolución</option><option>Informe Técnico</option><option>Dictamen</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Estado Actual</p>
+                                            <select value={editDoc.status} onChange={(e) => setEditDoc({...editDoc, status: e.target.value})} className="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-brand-500 outline-none text-slate-800 font-medium">
+                                                <option value="Activo">Activo</option><option value="Inactivo">Inactivo</option><option value="Guardado">Guardado</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Fecha</p>
+                                            <div className="flex items-center gap-2 text-slate-800 py-3"><Icons.Calendar size={18} className="text-slate-400"/>{editDoc.date}</div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Autor</p>
+                                            <div className="relative">
+                                                <Icons.User size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"/>
+                                                <input type="text" value={editDoc.author} onChange={(e) => setEditDoc({...editDoc, author: e.target.value})} className="w-full border border-slate-300 rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-brand-500 outline-none text-slate-800 font-medium" />
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-2">
+                                            <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Formato</p>
+                                            <div className="font-mono text-slate-800 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium w-fit">{editDoc.id}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-2">Archivo Adjunto</p>
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between border border-slate-300 rounded-xl p-4 bg-white gap-4 shadow-sm">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-brand-50 p-3 rounded-xl text-brand-600">
+                                                    <Icons.FileText size={24} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-800 text-sm max-w-[250px] truncate" title={`${editDoc.title}.docx`}>
+                                                        {editDoc.title}.docx
+                                                    </p>
+                                                    <p className="text-xs text-slate-500 mt-0.5">Versión actual • {editDoc.date}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="secondary" className="!py-2 !px-3 !text-sm" onClick={() => handleDownloadDoc(editDoc)}>
+                                                    <Icons.Download size={16} /> Descargar
+                                                </Button>
+                                                <input 
+                                                    type="file" 
+                                                    id={`upload-file-${editDoc.id}`} 
+                                                    className="hidden" 
+                                                    accept=".docx,.pdf" 
+                                                    onChange={(e) => { 
+                                                        if(e.target.files?.[0]) alert('Plantilla actualizada con éxito: ' + e.target.files[0].name); 
+                                                    }} 
+                                                />
+                                                <Button 
+                                                    variant="secondary" 
+                                                    className="!py-2 !px-3 !text-sm !text-amber-700 !border-amber-200 hover:!bg-amber-50" 
+                                                    onClick={() => document.getElementById(`upload-file-${editDoc.id}`).click()}
+                                                >
+                                                    <Icons.Upload size={16} /> Actualizar Plantilla
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-100 rounded-xl p-5 relative">
+                                        {/* Fondo aislado para no cortar el menú desplegable */}
+                                        <div className="absolute inset-0 overflow-hidden rounded-xl pointer-events-none">
+                                            <div className="absolute top-0 right-0 p-4 opacity-10"><Icons.LinkIcon size={80}/></div>
+                                        </div>
+                                        <h4 className="font-bold text-indigo-900 text-sm mb-4 flex items-center gap-2 relative z-10"><Icons.LinkIcon size={18} /> Integración Digitalia (Expedientes)</h4>
+                                        
+                                        <div className="relative z-20 flex gap-2 mb-4">
+                                            <div className="relative flex-1">
+                                                <input 
+                                                    type="text" 
+                                                    value={newExpedienteInput} 
+                                                    onChange={e => handleSearchEditExpediente(e.target.value)} 
+                                                    placeholder="Buscar expediente (Ej. EXP-2026...)" 
+                                                    className="w-full border border-indigo-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                />
+                                                {editExpedienteSearchResults.length > 0 && (
+                                                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-indigo-100 rounded-lg shadow-xl overflow-hidden z-30">
+                                                        <div className="bg-indigo-50 px-3 py-2 text-[10px] font-bold text-indigo-800 uppercase border-b border-indigo-100 tracking-wider">Resultados de la búsqueda</div>
+                                                        {editExpedienteSearchResults.map(exp => (
+                                                            <div key={exp.id} onClick={() => handleSelectEditExpediente(exp)} className="p-3 hover:bg-indigo-50 cursor-pointer border-b border-indigo-50 last:border-0 transition-colors flex justify-between items-center group">
+                                                                <div><p className="font-bold text-indigo-900 text-sm">{exp.id}</p><p className="text-xs text-slate-600 truncate max-w-[220px]">{exp.title}</p></div>
+                                                                <Icons.PlusCircle size={18} className="text-indigo-300 group-hover:text-indigo-600"/>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <Button 
+                                                variant="primary" 
+                                                className="!bg-indigo-600 hover:!bg-indigo-700 !py-2.5 !px-5 !text-sm"
+                                                onClick={() => {
+                                                    if(newExpedienteInput && !(editDoc.expedientes || []).includes(newExpedienteInput)) {
+                                                        setEditDoc({...editDoc, expedientes: [...(editDoc.expedientes || []), newExpedienteInput]});
+                                                        setNewExpedienteInput('');
+                                                        setEditExpedienteSearchResults([]);
+                                                    }
+                                                }}
+                                            >
+                                                Vincular
+                                            </Button>
+                                        </div>
+
+                                        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto custom-scrollbar">
+                                            {editDoc.expedientes && editDoc.expedientes.length > 0 ? (
+                                                editDoc.expedientes.map((exp, idx) => (
+                                                    <div key={idx} className="flex justify-between items-center bg-white/80 p-3 rounded-lg border border-indigo-100/50 backdrop-blur-sm shadow-sm group">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="bg-indigo-100 p-1.5 rounded-md text-indigo-600"><Icons.FolderOpen size={16}/></div>
+                                                            <span className="text-indigo-900 text-sm font-semibold">{exp}</span>
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setEditDoc({...editDoc, expedientes: editDoc.expedientes.filter((_, i) => i !== idx)})} 
+                                                            className="text-indigo-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors"
+                                                            title="Desvincular"
+                                                        >
+                                                            <Icons.Trash size={16} />
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-indigo-400 text-sm italic col-span-2">No hay expedientes vinculados.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-100">
+                                <div className="bg-slate-50 p-6 flex justify-end gap-3 border-t border-slate-200 shrink-0">
                                     <Button variant="ghost" onClick={() => setEditDoc(null)}>Cancelar</Button>
                                     <Button variant="primary" onClick={handleUpdateDoc}><Icons.Save size={18} /> Guardar Cambios</Button>
                                 </div>
@@ -543,7 +812,7 @@
             const [digitaliaSearch, setDigitaliaSearch] = useState('');
             const [selectedDigitaliaExp, setSelectedDigitaliaExp] = useState(null);
             const [digitaliaSearchResults, setDigitaliaSearchResults] = useState([]);
-            const [formData, setFormData] = useState({ title: '', date: new Date().toISOString().split('T')[0], responsible: 'Cynthia Gonzalez', visibility: 'Público', designatedUsers: [], content: 'Se procede a la firma...' });
+            const [formData, setFormData] = useState({ title: '', date: new Date().toISOString().split('T')[0], responsible: 'Cynthia Gonzalez', visibility: 'Público', designatedUsers: [], content: 'Se procede a la firma...', keyword: '' });
             
             const [generatedId, setGeneratedId] = useState('');
             const [availableUsers] = useState(['Rodrigo Antola', 'Juan Perez', 'Maria Lopez', 'Admin Sistema', 'Carlos Ruiz']);
@@ -599,11 +868,11 @@
                     id: newId, 
                     title: creationMode === 'form' ? formData.title : `${selectedTemplate} N° ${year}/${nextSeq}`, 
                     type: selectedTemplate || 'Documento', 
-                    keyword: 'General',
+                    keyword: formData.keyword || 'General',
                     author: formData.responsible, 
                     date: formData.date, 
                     institution: 'Ministerio de Tecnologías', 
-                    status: 'Guardado', 
+                    status: 'Activo', 
                     digitaliaId: null, 
                     hash: '7f8...1a',
                     visibility: formData.visibility
@@ -639,6 +908,7 @@
                         const targetIndex = newDocs.findIndex(d => d.id === generatedId);
                         if (targetIndex !== -1) {
                             newDocs[targetIndex].digitaliaId = relatedTramites[0].id; 
+                            newDocs[targetIndex].expedientes = relatedTramites.map(t => t.id);
                         }
                         return newDocs;
                      });
@@ -706,8 +976,12 @@
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Fecha</label>
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Fecha de Emisión</label>
                                             <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/>
+                                        </div>
+                                        <div className="col-span-2 md:col-span-1">
+                                            <label className="block text-sm font-semibold text-slate-700 mb-2">Palabra Clave</label>
+                                            <input type="text" value={formData.keyword} onChange={e => setFormData({...formData, keyword: e.target.value})} placeholder="Ej. Presupuesto, RRHH, Contratos..." className="w-full border border-slate-300 rounded-xl p-3 focus:ring-2 focus:ring-brand-500 outline-none"/>
                                         </div>
                                     </div>
                                     
@@ -909,6 +1183,9 @@
                                                     <p className="text-xs font-bold text-slate-800 uppercase tracking-wide">
                                                         Fecha de Emisión: <span className="font-mono font-medium text-slate-700">{formData.date} 15:28:04</span>
                                                     </p>
+                                                    <p className="text-xs font-bold text-slate-800 uppercase tracking-wide mt-1">
+                                                        Formato: <span className="font-mono font-medium text-slate-700">{generatedId || `${(selectedTemplate || 'DOC').substring(0, 3).toUpperCase()}-${new Date().getFullYear()}-XXXX`}</span>
+                                                    </p>
                                                 </div>
 
                                                 <div className="flex justify-between items-start">
@@ -956,7 +1233,7 @@
                                                      </button>
                                                  </div>
 
-                                                 <div className={`relative transition-opacity duration-300 ${!isSaved ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                                                 <div className="relative transition-opacity duration-300">
                                                      <button 
                                                          onClick={() => { setActiveTab(formData.visibility === 'Privado' ? 'my_documents' : 'repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} 
                                                          className="w-full py-4 rounded-xl flex flex-col items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 border border-slate-700"
@@ -982,7 +1259,7 @@
                                         <h4 className="font-bold text-slate-800 text-lg mb-6 pb-2 border-b border-slate-100 flex items-center gap-2"><Icons.FileText className="text-slate-400"/> Detalles del Documento</h4>
                                         <div className="grid grid-cols-2 gap-y-6 gap-x-8">
                                             <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Título</p><p className="text-lg font-medium text-slate-900">{creationMode === 'form' ? formData.title : `${selectedTemplate} N° 2026/45`}</p></div>
-                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">ID Sistema</p><p className="font-mono text-slate-600 bg-slate-100 w-fit px-2 rounded">{generatedId || 'Calculando...'}</p></div>
+                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Formato</p><p className="font-mono text-slate-600 bg-slate-100 w-fit px-2 rounded">{generatedId || 'Calculando...'}</p></div>
                                             <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Fecha Emisión</p><p className="text-slate-800">{creationMode === 'form' ? formData.date : '02/02/2026'}</p></div>
                                             <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Responsable</p><div className="flex items-center gap-2"><div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center text-xs font-bold text-brand-600">CG</div><span className="text-slate-800">{creationMode === 'form' ? formData.responsible : 'Cynthia Gonzalez'}</span></div></div>
                                         </div>
@@ -1004,39 +1281,6 @@
                                     </Card>
                                 </div>
                                 <div className="flex justify-center pt-6"><Button variant="primary" onClick={() => { setActiveTab(formData.visibility === 'Privado' ? 'my_documents' : 'repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} className="!px-8 !py-3 !text-lg shadow-xl hover:shadow-2xl"><Icons.Home size={20} /> {formData.visibility === 'Privado' ? 'Volver a Mi Dependencia' : 'Volver al Repositorio'}</Button></div>
-                            </div>
-                        )}
-
-                        {step === 4 && (
-                            <div className="space-y-8 animate-fadeIn p-4">
-                                <div className="bg-emerald-50 border border-emerald-200 p-8 rounded-2xl flex items-center gap-6 shadow-sm"><div className="bg-emerald-100 p-4 rounded-full text-emerald-600 shadow-inner"><Icons.CheckCircle size={40} /></div><div><h3 className="text-2xl font-bold text-emerald-900 mb-1">¡Proceso Finalizado con Éxito!</h3><p className="text-emerald-700 text-lg">El documento ha sido guardado en el repositorio y vinculado a los expedientes seleccionados.</p></div></div>
-                                <div className="grid grid-cols-3 gap-8">
-                                    <Card className="col-span-2">
-                                        <h4 className="font-bold text-slate-800 text-lg mb-6 pb-2 border-b border-slate-100 flex items-center gap-2"><Icons.FileText className="text-slate-400"/> Detalles del Documento</h4>
-                                        <div className="grid grid-cols-2 gap-y-6 gap-x-8">
-                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Título</p><p className="text-lg font-medium text-slate-900">{creationMode === 'form' ? formData.title : `${selectedTemplate} N° 2026/45`}</p></div>
-                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">ID Sistema</p><p className="font-mono text-slate-600 bg-slate-100 w-fit px-2 rounded">{generatedId || 'Calculando...'}</p></div>
-                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Fecha Emisión</p><p className="text-slate-800">{creationMode === 'form' ? formData.date : '02/02/2026'}</p></div>
-                                            <div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Responsable</p><div className="flex items-center gap-2"><div className="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center text-xs font-bold text-brand-600">CG</div><span className="text-slate-800">{creationMode === 'form' ? formData.responsible : 'Cynthia Gonzalez'}</span></div></div>
-                                        </div>
-                                    </Card>
-                                    <Card className="col-span-1 bg-indigo-50/50 border-indigo-100">
-                                        <h4 className="font-bold text-indigo-900 text-lg mb-6 pb-2 border-b border-indigo-100 flex items-center gap-2"><Icons.LinkIcon/> Expedientes ({relatedTramites.length})</h4>
-                                        <div className="space-y-3">
-                                            {relatedTramites.length > 0 ? (
-                                                relatedTramites.map((tramite, idx) => (
-                                                    <div key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-indigo-50 flex justify-between items-center group hover:shadow-md transition-all">
-                                                        <div><p className="font-bold text-indigo-700 text-sm">{tramite.id}</p><p className="text-xs text-slate-500 truncate max-w-[150px]">{tramite.title}</p></div>
-                                                        <a href="#" className="text-indigo-400 hover:text-indigo-600"><Icons.ExternalLink size={18}/></a>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-center text-slate-400 italic py-4">No se realizaron vinculaciones.</p>
-                                            )}
-                                        </div>
-                                    </Card>
-                                </div>
-                                <div className="flex justify-center pt-6"><Button variant="primary" onClick={() => { setActiveTab('repository'); setStep(1); setIsSaved(false); setRelatedTramites([]); }} className="!px-8 !py-3 !text-lg shadow-xl hover:shadow-2xl"><Icons.Home size={20} /> Volver al Repositorio</Button></div>
                             </div>
                         )}
                      </div>
@@ -1688,8 +1932,8 @@
             const [activeTab, setActiveTab] = useState('repository');
             const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
             const [documents, setDocuments] = useState([
-                { id: 'RES-2026-0001', title: 'Resolución Ministerial 45/2026', type: 'Resolución', keyword: 'Presupuesto', author: 'Rodrigo Antola', date: '2026-02-02', institution: 'Ministerio de Hacienda', status: 'Activo', digitaliaId: 'EXP-9923' },
-                { id: 'INF-2026-0001', title: 'Informe Técnico Auditoría', type: 'Informe Técnico', keyword: 'Auditoría 2025', author: 'Cynthia Gonzalez', date: '2026-02-01', institution: 'Auditoría General', status: 'Inactivo', digitaliaId: null }
+                { id: 'RES-2026-0001', title: 'Resolución Ministerial 45/2026', type: 'Resolución', keyword: 'Presupuesto', author: 'Rodrigo Antola', date: '2026-02-02', institution: 'Ministerio de Hacienda', status: 'Activo', digitaliaId: 'EXP-9923', expedientes: ['EXP-9923'] },
+                { id: 'INF-2026-0001', title: 'Informe Técnico Auditoría', type: 'Informe Técnico', keyword: 'Auditoría 2025', author: 'Cynthia Gonzalez', date: '2026-02-01', institution: 'Auditoría General', status: 'Inactivo', digitaliaId: null, expedientes: [] }
             ]);
 
             return (
