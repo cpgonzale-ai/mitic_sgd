@@ -3,58 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digitalia - Test</title>
+    <title>Digitalia - Portal Unificado de Gobierno</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- React & ReactDOM -->
+    <!-- React & ReactDOM (SIN BABEL) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- Babel para JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Fuentes Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         body { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
+        .animate-slide-up { animation: slideUp 0.5s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Iconos SVG inline */
+        .icon-svg {
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body class="bg-slate-50 h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
 
-    <script type="text/babel">
-        // Versión MÍNIMA para probar
-        const App = () => {
-            const [contador, setContador] = React.useState(0);
+    <script>
+        // ==========================================
+        // REACT SIN BABEL (USANDO createElement)
+        // ==========================================
+        
+        const { useState, useEffect, createElement } = React;
+
+        // ==========================================
+        // ICONOS (SVG inline)
+        // ==========================================
+        
+        const Icon = ({ name, size = 24, className = "", ...props }) => {
+            const icons = {
+                filetext: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z" }),
+                    createElement('polyline', { points: "14 2 14 8 20 8" }),
+                    createElement('line', { x1: "16", y1: "13", x2: "8", y2: "13" }),
+                    createElement('line', { x1: "16", y1: "17", x2: "8", y2: "17" }),
+                    createElement('polyline', { points: "10 9 9 9 8 9" })
+                ),
+                home: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" }),
+                    createElement('polyline', { points: "9 22 9 12 15 12 15 22" })
+                ),
+                inbox: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "M22 12h-6l-2 3h-4l-2-3H2" }),
+                    createElement('path', { d: "M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" })
+                ),
+                eye: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" }),
+                    createElement('circle', { cx: "12", cy: "12", r: "3" })
+                ),
+                send: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('line', { x1: "22", y1: "2", x2: "11", y2: "13" }),
+                    createElement('polygon', { points: "22 2 15 22 11 13 2 9 22 2" })
+                ),
+                archive: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('rect', { x: "2", y: "4", width: "20", height: "5", rx: "1" }),
+                    createElement('path', { d: "M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9" }),
+                    createElement('path', { d: "M10 13h4" })
+                ),
+                edit: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" }),
+                    createElement('path', { d: "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" })
+                ),
+                user: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className: `icon-svg ${className || ''}`, ...props },
+                    createElement('path', { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+                    createElement('circle', { cx: "12", cy: "7", r: "4" })
+                ),
+                // Iconos para el portal
+                portal_folder: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 28, height: 28, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+                    createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14 2z" }),
+                    createElement('polyline', { points: "14 2 14 8 20 8" }),
+                    createElement('path', { d: "M16 13H8" }),
+                    createElement('path', { d: "M16 17H8" }),
+                    createElement('path', { d: "M10 9H8" })
+                ),
+                portal_document: createElement('svg', { xmlns: "http://www.w3.org/2000/svg", width: 28, height: 28, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+                    createElement('path', { d: "M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" }),
+                    createElement('polyline', { points: "14 2 14 8 20 8" }),
+                    createElement('path', { d: "M2 15h10" }),
+                    createElement('path', { d: "m9 18 3-3-3-3" })
+                )
+            };
             
-            return (
-                <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-                    <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-                        <h1 className="text-3xl font-bold text-blue-600 mb-4">
-                            ✅ Digitalia - Test Funcional
-                        </h1>
-                        <p className="text-gray-600 mb-4">
-                            Si ves esto, React está funcionando correctamente.
-                        </p>
-                        <button 
-                            onClick={() => setContador(contador + 1)}
-                            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-                        >
-                            Clics: {contador}
-                        </button>
-                        <p className="text-sm text-gray-400 mt-4">
-                            Presiona F12 para ver la consola
-                        </p>
-                    </div>
-                </div>
+            const icon = icons[name];
+            if (!icon) {
+                console.warn(`Icono no encontrado: ${name}`);
+                return null;
+            }
+            return icon;
+        };
+
+        // ==========================================
+        // PORTAL CARD
+        // ==========================================
+        
+        const PortalCard = ({ title, description, icon, color, onClick, badge }) => {
+            return createElement('div', {
+                onClick: onClick,
+                className: "bg-white rounded-2xl p-8 shadow-lg border border-slate-100 cursor-pointer card-hover group relative overflow-hidden"
+            },
+                createElement('div', { className: `absolute top-0 right-0 w-32 h-32 bg-${color}-50 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110` }),
+                createElement('div', { className: "relative z-10" },
+                    createElement('div', { className: `w-14 h-14 rounded-xl bg-${color}-100 text-${color}-600 flex items-center justify-center mb-6 shadow-sm group-hover:bg-${color}-600 group-hover:text-white transition-colors` }, icon),
+                    createElement('h3', { className: "text-xl font-bold text-slate-800 mb-2 group-hover:text-blue-900 transition-colors" }, title),
+                    createElement('p', { className: "text-slate-500 text-sm leading-relaxed mb-4" }, description),
+                    createElement('div', { className: "flex items-center text-sm font-semibold text-blue-600 group-hover:translate-x-2 transition-transform" },
+                        "Acceder al módulo",
+                        createElement('span', { className: "ml-2" }, "→")
+                    )
+                ),
+                badge && createElement('div', { className: "absolute top-4 right-4 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg animate-pulse" }, badge)
             );
         };
 
-        // Renderizar la aplicación
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        // ==========================================
+        // PORTAL SCREEN
+        // ==========================================
         
-        console.log('✅ App renderizada correctamente');
+        const PortalScreen = ({ onNavigate }) => {
+            const handleExpediente = () => {
+                alert('Módulo de Expediente (versión simplificada)');
+                // window.location.href = 'https://cpgonzale-ai.github.io/mitic_sgd/gestion_expediente.html';
+            };
+            
+            const handleDocumental = () => {
+                alert('Módulo de Gestión Documental (versión simplificada)');
+                // window.location.href = 'https://cpgonzale-ai.github.io/mitic_sgd/gestion_documental.html';
+            };
+            
+            return createElement('div', { className: "min-h-screen bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80')] bg-cover bg-center relative font-sans" },
+                createElement('div', { className: "absolute inset-0 bg-gradient-to-br from-blue-900/90 via-slate-900/90 to-slate-900/95 backdrop-blur-sm" }),
+                createElement('div', { className: "relative z-10 h-full flex flex-col" },
+                    // Header
+                    createElement('header', { className: "px-8 py-6 flex justify-between items-center border-b border-white/10" },
+                        createElement('div', { className: "flex items-center gap-3" },
+                            createElement('div', { className: "w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30" }, "D"),
+                            createElement('div', null,
+                                createElement('h1', { className: "text-white font-bold text-xl tracking-tight" }, "DIGITALIA"),
+                                createElement('p', { className: "text-blue-200 text-xs tracking-wider uppercase" }, "Plataforma de Gobierno Digital")
+                            )
+                        ),
+                        createElement('div', { className: "flex items-center gap-4" },
+                            createElement('div', { className: "text-right hidden sm:block" },
+                                createElement('p', { className: "text-white text-sm font-medium" }, "Magali Amarilla"),
+                                createElement('p', { className: "text-slate-400 text-xs" }, "MITIC - Unidad Especializada TIC")
+                            ),
+                            createElement('div', { className: "w-10 h-10 rounded-full bg-slate-700 border-2 border-slate-600 flex items-center justify-center text-white overflow-hidden" },
+                                createElement('svg', { xmlns: "http://www.w3.org/2000/svg", className: "h-6 w-6", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2" },
+                                    createElement('path', { d: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" }),
+                                    createElement('circle', { cx: "12", cy: "7", r: "4" })
+                                )
+                            )
+                        )
+                    ),
+                    // Contenido Principal
+                    createElement('main', { className: "flex-1 flex flex-col justify-center items-center p-6 sm:p-12 animate-slide-up" },
+                        createElement('div', { className: "text-center mb-12 max-w-2xl mx-auto" },
+                            createElement('h2', { className: "text-3xl sm:text-4xl font-bold text-white mb-4" }, "Bienvenido al Ecosistema Digital"),
+                            createElement('p', { className: "text-slate-300 text-lg" }, "Seleccione el módulo de gestión con el que desea operar hoy.")
+                        ),
+                        createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full" },
+                            // Opción 1: Expediente
+                            createElement(PortalCard, {
+                                title: "Gestión de Expediente",
+                                description: "Tramitación electrónica, gestión de actuaciones, firmas digitales y seguimiento de expedientes administrativos.",
+                                color: "blue",
+                                badge: "3 Pendientes",
+                                icon: createElement(Icon, { name: "portal_folder" }),
+                                onClick: handleExpediente
+                            }),
+                            // Opción 2: Gestión Documental
+                            createElement(PortalCard, {
+                                title: "Gestión Documental",
+                                description: "Repositorio centralizado, generación de documentos oficiales, validación de autenticidad e integración interinstitucional.",
+                                color: "emerald",
+                                icon: createElement(Icon, { name: "portal_document" }),
+                                onClick: handleDocumental
+                            })
+                        )
+                    ),
+                    // Footer
+                    createElement('footer', { className: "text-center py-6 text-slate-500 text-xs border-t border-white/5 bg-slate-900/50 backdrop-blur-md" },
+                        "© 2026 Gobierno Nacional del Paraguay. Todos los derechos reservados. Sistema Digitalia v2.5"
+                    )
+                )
+            );
+        };
+
+        // ==========================================
+        // APP PRINCIPAL
+        // ==========================================
+        
+        const App = () => {
+            return createElement(PortalScreen);
+        };
+
+        // ==========================================
+        // RENDERIZAR
+        // ==========================================
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(createElement(App));
+        
+        console.log('✅ Digitalia cargado correctamente sin Babel!');
     </script>
 </body>
 </html>
